@@ -4,15 +4,14 @@ import withBundleAnalyzer from '@next/bundle-analyzer'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  output: 'standalone',
-  images: {
-    unoptimized: true,
-  },
   eslint: {
     dirs: ['src'],
   },
   experimental: {
     modularizeImports: {
+      images: {
+        unoptimized: true,
+      },
       '@mui/material': {
         transform: '@mui/material/{{member}}',
       },
