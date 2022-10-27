@@ -8,10 +8,10 @@ const nextConfig = {
     dirs: ['src'],
   },
   experimental: {
+    images: {
+      unoptimized: true,
+    },
     modularizeImports: {
-      images: {
-        unoptimized: true,
-      },
       '@mui/material': {
         transform: '@mui/material/{{member}}',
       },
