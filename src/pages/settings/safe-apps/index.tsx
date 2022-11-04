@@ -8,7 +8,7 @@ const SafeAppsPermissionsPage: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Safe – Settings – Safe Apps permissions</title>
+        <title>Evmos Safe – Settings – Safe Apps permissions</title>
       </Head>
 
       <SettingsHeader />

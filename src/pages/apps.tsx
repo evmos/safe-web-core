@@ -52,7 +52,7 @@ const Apps: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Safe Apps</title>
+        <title>Evmos Safe Apps</title>
       </Head>
 
       <SafeAppList />

@@ -7,7 +7,7 @@ const SpendingLimitsPage: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Safe – Settings – Spending limit</title>
+        <title>Evmos Safe – Settings – Spending limit</title>
       </Head>
 
       <SettingsHeader />

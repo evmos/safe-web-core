@@ -6,7 +6,7 @@ import { useAppDispatch } from '@/store'
 import { openCookieBanner } from '@/store/popupSlice'
 import { AppRoutes } from '@/config/routes'
 import packageJson from '../../../../package.json'
-import AppstoreButton from '../AppStoreButton'
+//import AppstoreButton from '../AppStoreButton'
 
 const footerPages = [AppRoutes.welcome, AppRoutes.settings.index]
 
@@ -27,19 +27,19 @@ const Footer = (): ReactElement | null => {
     <footer className={css.container}>
       <ul>
         <li>
-          <Typography variant="caption">&copy;2022 Safe Ecosystem Foundation</Typography>
+          <Typography variant="caption">&copy;2022 Evmos</Typography>
         </li>
         <li>
-          <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/terms">
-            Terms
+          <Link rel="noopener noreferrer" target="_blank" href="https://evmos.org/">
+            Evmos Network
           </Link>
         </li>
         <li>
-          <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/privacy">
-            Privacy
+          <Link rel="noopener noreferrer" target="_blank" href="https://evmos.dev/">
+            Evmos Documentation
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/licenses">
             Licenses
           </Link>
@@ -48,14 +48,14 @@ const Footer = (): ReactElement | null => {
           <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/imprint">
             Imprint
           </Link>
-        </li>
+        </li> */}
         <li>
-          <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/cookie">
+          {/* <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/cookie">
             Cookie Policy
           </Link>
-          &nbsp;&mdash;&nbsp;
+          &nbsp;&mdash;&nbsp; */}
           <Link href="#" onClick={onCookieClick}>
-            Preferences
+            Cookie Preferences
           </Link>
         </li>
         <li>
@@ -67,9 +67,9 @@ const Footer = (): ReactElement | null => {
             v{packageJson.version}
           </Link>
         </li>
-        <li>
+        {/* <li>
           <AppstoreButton placement="footer" />
-        </li>
+        </li> */}
       </ul>
     </footer>
   )

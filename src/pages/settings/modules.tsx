@@ -9,7 +9,7 @@ const Modules: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Safe – Settings – Modules</title>
+        <title>Evmos Safe – Settings – Modules</title>
       </Head>
 
       <SettingsHeader />

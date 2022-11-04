@@ -37,7 +37,7 @@ const NFTs: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Safe – NFTs</title>
+        <title>Evmos Safe – NFTs</title>
       </Head>
 
       <AssetsHeader />

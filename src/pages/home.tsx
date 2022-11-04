@@ -7,7 +7,7 @@ const Home: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Safe – Dashboard</title>
+        <title>Evmos Safe – Dashboard</title>
       </Head>
 
       <main>
