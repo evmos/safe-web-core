@@ -41,7 +41,7 @@ Project maintainers are responsible for clarifying the standards of acceptable b
 
 Project maintainers have the right and responsibility to remove, edit, or reject comments, commits, code, issues, and other contributions that are not aligned to this Code of Conduct, or to ban temporarily or permanently any contributor for other behaviors that they deem inappropriate, threatening, offensive, or harmful.
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported via GitHub’s report feature.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported via GitHub's report feature.
 
 ### Scope
 
