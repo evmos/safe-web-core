@@ -28,12 +28,14 @@ const getRedirect = (chainId: string, safeAddress: string, redirectQuery?: strin
   // Otherwise, redirect to the provided URL (e.g. from a Safe App)
 
   // Track the redirect to Safe App
+  // TODO: Narrow this down to /apps only
   if (redirectUrl.includes('apps')) {
     trackSafeAppEvent({ ...SAFE_APPS_EVENTS.SHARED_APP_OPEN_AFTER_SAFE_CREATION, label: redirectUrl })
   }
 
   // We're prepending the safe address directly here because the `router.push` doesn't parse
   // The URL for already existing query params
+  // TODO: Check if we can accomplish this with URLSearchParams or URL instead
   const hasQueryParams = redirectUrl.includes('?')
   const appendChar = hasQueryParams ? '&' : '?'
   return redirectUrl + `${appendChar}safe=${address}`
@@ -71,9 +73,15 @@ const useSafeCreationEffects = ({
       trackEvent(CREATE_SAFE_EVENTS.CREATED_SAFE)
 
       // Add the Safe and add names to the address book
-      if (pendingSafe) {
+      if (pendingSafe && pendingSafe.safeAddress) {
         dispatch(
-          updateAddressBook(chainId, pendingSafe.address, pendingSafe.name, pendingSafe.owners, pendingSafe.threshold),
+          updateAddressBook(
+            chainId,
+            pendingSafe.safeAddress,
+            pendingSafe.name,
+            pendingSafe.owners,
+            pendingSafe.threshold,
+          ),
         )
       }
 

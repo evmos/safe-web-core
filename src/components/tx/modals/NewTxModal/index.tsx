@@ -15,6 +15,7 @@ import { SendAssetsField } from '../TokenTransferModal/SendAssetsForm'
 import { useRemoteSafeApps } from '@/hooks/safe-apps/useRemoteSafeApps'
 import { AppRoutes } from '@/config/routes'
 import { SafeAppsTag } from '@/config/constants'
+import SafeAppIcon from '@/components/safe-apps/SafeAppIcon'
 
 const TxButton = (props: ButtonProps) => (
   <Button variant="contained" sx={{ '& svg path': { fill: 'currentColor' } }} fullWidth {...props} />
@@ -34,7 +35,7 @@ const useTxBuilderApp = (): { app?: SafeAppData; link: UrlObject } => {
   }
 }
 
-const NewTxModal = ({ onClose, recipient = '' }: { onClose: () => void; recipient?: string }): ReactElement => {
+const NewTxModal = ({ onClose, recipient }: { onClose: () => void; recipient?: string }): ReactElement => {
   const [tokenModalOpen, setTokenModalOpen] = useState<boolean>(false)
   const [nftsModalOpen, setNftModalOpen] = useState<boolean>(false)
   const txBuilder = useTxBuilderApp()
@@ -57,7 +58,7 @@ const NewTxModal = ({ onClose, recipient = '' }: { onClose: () => void; recipien
 
   return (
     <>
-      <ModalDialog open dialogTitle="New transaction" onClose={onClose}>
+      <ModalDialog open={!tokenModalOpen && !nftsModalOpen} dialogTitle="New transaction" onClose={onClose}>
         <DialogContent>
           <Box display="flex" flexDirection="column" alignItems="center" gap={2} pt={7} pb={4} width={240} m="auto">
             <TxButton onClick={onTokenModalOpen} startIcon={<SvgIcon component={AssetsIcon} inheritViewBox />}>
@@ -72,7 +73,9 @@ const NewTxModal = ({ onClose, recipient = '' }: { onClose: () => void; recipien
             {txBuilder.app && !recipient && (
               <Link href={txBuilder.link} passHref>
                 <TxButton
-                  startIcon={<img src={txBuilder.app.iconUrl} height={20} width="auto" alt={txBuilder.app.name} />}
+                  startIcon={
+                    <SafeAppIcon src={txBuilder.app.iconUrl} width={20} height={20} alt={txBuilder.app.name} />
+                  }
                   variant="outlined"
                   onClick={onContractInteraction}
                 >

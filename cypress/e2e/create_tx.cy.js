@@ -15,8 +15,13 @@ describe('Queue a transaction on 1/N', () => {
   })
 
   it('should create and queue a transaction', () => {
+    // Assert that "New transaction" button is visible
+    cy.contains('New transaction', {
+      timeout: 60_000, // `lastWallet` takes a while initialize in CI
+    }).should('be.visible')
+
     // Open the new transaction modal
-    cy.contains('New transaction', { timeout: 10000 }).click()
+    cy.contains('New transaction').click()
 
     // Modal is open
     cy.contains('h2', 'New transaction').should('be.visible')
@@ -30,11 +35,18 @@ describe('Queue a transaction on 1/N', () => {
 
     // Insert amount
     cy.get('input[name="amount"]').type(`${sendValue}`)
-
-    cy.contains('Next').click()
   })
 
   it('should create a queued transaction', () => {
+    // Wait for /estimations response
+    cy.intercept('POST', '/**/multisig-transactions/estimations').as('EstimationRequest')
+
+    cy.contains('Next').click()
+
+    cy.wait('@EstimationRequest', {
+      timeout: 30_000, // EstimationRequest takes a while in CI
+    })
+
     // Alias for New transaction modal
     cy.contains('h2', 'Review transaction').parents('div').as('modal')
 
@@ -53,7 +65,7 @@ describe('Queue a transaction on 1/N', () => {
     cy.get('label').contains('Safe transaction nonce').next().clear().type('3')
     cy.contains('Confirm').click()
 
-    // Asserts the execute checkbox exists and is checkable
+    // Asserts the execute checkbox exists
     cy.get('@modal').within(() => {
       cy.get('input[type="checkbox"]')
         .parent('span')
@@ -66,6 +78,7 @@ describe('Queue a transaction on 1/N', () => {
     })
     cy.contains('Estimated fee').should('exist')
 
+    // Asserts the execute checkbox is uncheckable
     cy.contains('Execute transaction').click()
     cy.get('@modal').within(() => {
       cy.get('input[type="checkbox"]')
@@ -90,11 +103,17 @@ describe('Queue a transaction on 1/N', () => {
     cy.get('@modal').within(() => {
       cy.get('input[type="checkbox"]').should('not.exist')
     })
-
-    cy.contains('Submit').click()
   })
 
   it('should click the notification and see the transaction queued', () => {
+    cy.contains('Submit').click()
+
+    // Wait for the /propose request
+    cy.intercept('POST', '/**/propose').as('ProposeTx')
+    cy.wait('@ProposeTx', {
+      timeout: 30_000, // ProposeTx takes a while in CI
+    })
+
     // Click on the notification
     cy.contains('View transaction').click()
 

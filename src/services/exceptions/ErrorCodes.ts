@@ -10,6 +10,7 @@ enum ErrorCodes {
   _100 = '100: Invalid input in the address field',
   _101 = '101: Failed to resolve the address',
   _103 = '103: Error creating a SafeTransaction',
+  _104 = '104: Invalid chain short name in the URL',
 
   _302 = '302: Error connecting to the wallet',
   _303 = '303: Error creating pairing session',
@@ -32,6 +33,7 @@ enum ErrorCodes {
   _701 = '701: Failed to write to local/session storage',
   _702 = '702: Failed to remove from local/session storage',
   _703 = '703: Error importing an address book',
+  _704 = '704: Error importing global data',
 
   _800 = '800: Safe creation tx failed',
   _801 = '801: Failed to send a tx with a spending limit',

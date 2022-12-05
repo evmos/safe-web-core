@@ -11,6 +11,7 @@ import {
   TextField,
   DialogContent,
   Box,
+  SvgIcon,
 } from '@mui/material'
 import { type TokenInfo } from '@gnosis.pm/safe-react-gateway-sdk'
 
@@ -25,6 +26,11 @@ import SpendingLimitRow from '@/components/tx/SpendingLimitRow'
 import useSpendingLimit from '@/hooks/useSpendingLimit'
 import EthHashInfo from '@/components/common/EthHashInfo'
 import useAddressBook from '@/hooks/useAddressBook'
+import { getSafeTokenAddress } from '@/components/common/SafeTokenWidget'
+import useChainId from '@/hooks/useChainId'
+import { sameAddress } from '@/utils/addresses'
+import InfoIcon from '@/public/images/notifications/info.svg'
+import useIsSafeTokenPaused from '@/components/tx/modals/TokenTransferModal/useIsSafeTokenPaused'
 
 export const AutocompleteItem = (item: { tokenInfo: TokenInfo; balance: string }): ReactElement => (
   <Grid container alignItems="center" gap={1}>
@@ -67,9 +73,17 @@ type SendAssetsFormProps = {
 const SendAssetsForm = ({ onSubmit, formData }: SendAssetsFormProps): ReactElement => {
   const { balances } = useBalances()
   const addressBook = useAddressBook()
+  const chainId = useChainId()
+  const safeTokenAddress = getSafeTokenAddress(chainId)
+  const isSafeTokenPaused = useIsSafeTokenPaused()
 
   const formMethods = useForm<SendAssetsFormData>({
-    defaultValues: { ...formData, [SendAssetsField.type]: SendTxType.multiSig },
+    defaultValues: {
+      [SendAssetsField.recipient]: formData?.[SendAssetsField.recipient] || '',
+      [SendAssetsField.tokenAddress]: formData?.[SendAssetsField.tokenAddress] || '',
+      [SendAssetsField.amount]: formData?.[SendAssetsField.amount] || '',
+      [SendAssetsField.type]: formData?.[SendAssetsField.type] || SendTxType.multiSig,
+    },
     mode: 'onChange',
     delayError: 500,
   })
@@ -93,6 +107,8 @@ const SendAssetsForm = ({ onSubmit, formData }: SendAssetsFormProps): ReactEleme
   const spendingLimit = useSpendingLimit(selectedToken?.tokenInfo)
   const isSpendingLimitType = type === SendTxType.spendingLimit
 
+  const isSafeTokenSelected = sameAddress(safeTokenAddress, tokenAddress)
+
   const onMaxAmountClick = () => {
     if (!selectedToken) return
 
@@ -101,8 +117,12 @@ const SendAssetsForm = ({ onSubmit, formData }: SendAssetsFormProps): ReactEleme
         ? Math.min(+spendingLimit.amount, +selectedToken.balance).toString()
         : selectedToken.balance
 
-    setValue(SendAssetsField.amount, safeFormatUnits(amount, selectedToken.tokenInfo.decimals))
+    setValue(SendAssetsField.amount, safeFormatUnits(amount, selectedToken.tokenInfo.decimals), {
+      shouldValidate: true,
+    })
   }
+
+  const isDisabled = isSafeTokenSelected && isSafeTokenPaused
 
   return (
     <FormProvider {...formMethods}>
@@ -120,7 +140,7 @@ const SendAssetsForm = ({ onSubmit, formData }: SendAssetsFormProps): ReactEleme
             )}
           </FormControl>
 
-          <FormControl fullWidth sx={{ mb: 2 }}>
+          <FormControl fullWidth>
             <InputLabel id="asset-label" required>
               Select an asset
             </InputLabel>
@@ -142,11 +162,20 @@ const SendAssetsForm = ({ onSubmit, formData }: SendAssetsFormProps): ReactEleme
             </Select>
           </FormControl>
 
+          {isDisabled && (
+            <Box mt={1} display="flex" alignItems="center">
+              <SvgIcon component={InfoIcon} color="error" fontSize="small" />
+              <Typography variant="body2" color="error" ml={0.5}>
+                $SAFE is currently non-transferable.
+              </Typography>
+            </Box>
+          )}
+
           {!!spendingLimit && (
             <SpendingLimitRow spendingLimit={spendingLimit} selectedToken={selectedToken?.tokenInfo} />
           )}
 
-          <FormControl fullWidth>
+          <FormControl fullWidth sx={{ mt: 2 }}>
             <TextField
               label={errors.amount?.message || 'Amount'}
               error={!!errors.amount}
@@ -175,7 +204,7 @@ const SendAssetsForm = ({ onSubmit, formData }: SendAssetsFormProps): ReactEleme
           </FormControl>
         </DialogContent>
 
-        <Button variant="contained" type="submit">
+        <Button variant="contained" type="submit" disabled={isDisabled}>
           Next
         </Button>
       </form>
