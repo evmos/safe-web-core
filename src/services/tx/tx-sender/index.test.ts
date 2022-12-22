@@ -1,7 +1,7 @@
 import { setSafeSDK } from '@/hooks/coreSDK/safeCoreSDK'
-import type Safe from '@gnosis.pm/safe-core-sdk'
-import { type TransactionResult } from '@gnosis.pm/safe-core-sdk-types'
-import { getTransactionDetails, postSafeGasEstimation } from '@gnosis.pm/safe-react-gateway-sdk'
+import type Safe from '@safe-global/safe-core-sdk'
+import { type TransactionResult } from '@safe-global/safe-core-sdk-types'
+import { getTransactionDetails, postSafeGasEstimation } from '@safe-global/safe-gateway-typescript-sdk'
 import extractTxInfo from '../extractTxInfo'
 import proposeTx from '../proposeTransaction'
 import * as txEvents from '../txEvents'
@@ -12,13 +12,13 @@ import {
   dispatchTxExecution,
   dispatchTxProposal,
   dispatchTxSigning,
-} from '../txSender'
+} from '.'
 import { ErrorCode } from '@ethersproject/logger'
 import { waitFor } from '@/tests/test-utils'
 import { Web3Provider } from '@ethersproject/providers'
 
 // Mock getTransactionDetails
-jest.mock('@gnosis.pm/safe-react-gateway-sdk', () => ({
+jest.mock('@safe-global/safe-gateway-typescript-sdk', () => ({
   getTransactionDetails: jest.fn(),
   postSafeGasEstimation: jest.fn(() => Promise.resolve({ safeTxGas: 60000, recommendedNonce: 17 })),
   Operation: {
@@ -283,7 +283,7 @@ describe('txSender', () => {
       expect(mockSafeSDK.executeTransaction).toHaveBeenCalled()
       expect(txEvents.txDispatch).toHaveBeenCalledWith('EXECUTING', { txId })
       expect(txEvents.txDispatch).toHaveBeenCalledWith('PROCESSING', { txId })
-      expect(txEvents.txDispatch).toHaveBeenCalledWith('PROCESSED', { receipt: {}, txId })
+      expect(txEvents.txDispatch).toHaveBeenCalledWith('PROCESSED', { txId })
     })
 
     it('should fail executing a tx', async () => {
@@ -330,7 +330,6 @@ describe('txSender', () => {
       expect(txEvents.txDispatch).toHaveBeenCalledWith('PROCESSING', { txId })
       expect(txEvents.txDispatch).toHaveBeenCalledWith('REVERTED', {
         txId,
-        receipt: { status: 0 },
         error: new Error('Transaction reverted by EVM'),
       })
     })

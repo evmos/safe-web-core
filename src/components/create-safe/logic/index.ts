@@ -1,20 +1,20 @@
 import type { Web3Provider, JsonRpcProvider } from '@ethersproject/providers'
-import type Safe from '@gnosis.pm/safe-core-sdk'
-import { SafeFactory, type DeploySafeProps } from '@gnosis.pm/safe-core-sdk'
+import type Safe from '@safe-global/safe-core-sdk'
+import { SafeFactory, type DeploySafeProps } from '@safe-global/safe-core-sdk'
 import { createEthersAdapter } from '@/hooks/coreSDK/safeCoreSDK'
-import type { ChainInfo, SafeInfo } from '@gnosis.pm/safe-react-gateway-sdk'
-import { EMPTY_DATA, ZERO_ADDRESS } from '@gnosis.pm/safe-core-sdk/dist/src/utils/constants'
+import type { ChainInfo, SafeInfo } from '@safe-global/safe-gateway-typescript-sdk'
+import { EMPTY_DATA, ZERO_ADDRESS } from '@safe-global/safe-core-sdk/dist/src/utils/constants'
 import {
   getFallbackHandlerContractInstance,
   getGnosisSafeContractInstance,
   getProxyFactoryContractInstance,
 } from '@/services/contracts/safeContracts'
 import { LATEST_SAFE_VERSION } from '@/config/constants'
-import type { PredictSafeProps } from '@gnosis.pm/safe-core-sdk/dist/src/safeFactory'
+import type { PredictSafeProps } from '@safe-global/safe-core-sdk/dist/src/safeFactory'
 import type { SafeFormData, PendingSafeTx } from '@/components/create-safe/types.d'
 import type { ConnectedWallet } from '@/services/onboard'
 import { BigNumber } from '@ethersproject/bignumber'
-import { getSafeInfo } from '@gnosis.pm/safe-react-gateway-sdk'
+import { getSafeInfo } from '@safe-global/safe-gateway-typescript-sdk'
 import { backOff } from 'exponential-backoff'
 import { SafeCreationStatus } from '@/components/create-safe/status/useSafeCreation'
 import { didRevert, type EthersError } from '@/utils/ethers-utils'
@@ -42,7 +42,7 @@ export const getSafeDeployProps = (
     safeAccountConfig: {
       threshold: safeParams.threshold,
       owners: safeParams.owners,
-      fallbackHandler: fallbackHandler.address,
+      fallbackHandler: fallbackHandler.getAddress(),
     },
     safeDeploymentConfig: {
       saltNonce: safeParams.saltNonce.toString(),
@@ -90,7 +90,7 @@ export const encodeSafeCreationTx = ({
     threshold,
     ZERO_ADDRESS,
     EMPTY_DATA,
-    fallbackHandlerContract.address,
+    fallbackHandlerContract.getAddress(),
     ZERO_ADDRESS,
     '0',
     ZERO_ADDRESS,

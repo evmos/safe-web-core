@@ -1,12 +1,12 @@
 import { type ReactElement } from 'react'
-import { type SafeTransaction } from '@gnosis.pm/safe-core-sdk-types'
+import { type SafeTransaction } from '@safe-global/safe-core-sdk-types'
 import { Box, Typography } from '@mui/material'
 import SendFromBlock from '../../SendFromBlock'
 import SignOrExecuteForm from '../../SignOrExecuteForm'
 import EthHashInfo from '@/components/common/EthHashInfo'
 import useAsync from '@/hooks/useAsync'
 import { createNftTransferParams } from '@/services/tx/tokenTransferParams'
-import { createTx } from '@/services/tx/txSender'
+import useTxSender from '@/hooks/useTxSender'
 import { type NftTransferParams } from '.'
 import ImageFallback from '@/components/common/ImageFallback'
 import useSafeAddress from '@/hooks/useSafeAddress'
@@ -17,13 +17,14 @@ type ReviewNftTxProps = {
 }
 
 const ReviewNftTx = ({ params, onSubmit }: ReviewNftTxProps): ReactElement => {
+  const { createTx } = useTxSender()
   const safeAddress = useSafeAddress()
   const { token } = params
 
   const [safeTx, safeTxError] = useAsync<SafeTransaction>(() => {
     const transferParams = createNftTransferParams(safeAddress, params.recipient, params.token.id, params.token.address)
-    return createTx(transferParams)
-  }, [safeAddress, params])
+    return createTx(transferParams, params.txNonce)
+  }, [safeAddress, params, createTx])
 
   return (
     <SignOrExecuteForm safeTx={safeTx} onSubmit={onSubmit} error={safeTxError}>

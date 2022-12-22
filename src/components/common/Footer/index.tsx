@@ -7,6 +7,7 @@ import { openCookieBanner } from '@/store/popupSlice'
 import { AppRoutes } from '@/config/routes'
 import packageJson from '../../../../package.json'
 //import AppstoreButton from '../AppStoreButton'
+import ExternalLink from '../ExternalLink'
 
 const footerPages = [AppRoutes.welcome, AppRoutes.settings.index]
 
@@ -30,42 +31,48 @@ const Footer = (): ReactElement | null => {
           <Typography variant="caption">&copy;2022 Evmos</Typography>
         </li>
         <li>
-          <Link rel="noopener noreferrer" target="_blank" href="https://evmos.org/">
+          <ExternalLink suppressIcon href="https://evmos.org/">
             Evmos Network
-          </Link>
+          </ExternalLink>
         </li>
         <li>
-          <Link rel="noopener noreferrer" target="_blank" href="https://evmos.dev/">
+          <ExternalLink suppressIcon href="https://evmos.dev/">
             Evmos Documentation
-          </Link>
+          </ExternalLink>
         </li>
         {/* <li>
-          <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/licenses">
-            Licenses
-          </Link>
+          <ExternalLink suppressIcon href="https://safe.global/terms">
+            Terms
+          </ExternalLink>
         </li>
         <li>
-          <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/imprint">
+          <ExternalLink suppressIcon href="https://safe.global/privacy">
+            Privacy
+          </ExternalLink>
+        </li>
+        <li>
+          <ExternalLink suppressIcon href="https://safe.global/licenses">
+            Licenses
+          </ExternalLink>
+        </li>
+        <li>
+          <ExternalLink suppressIcon href="https://safe.global/imprint">
             Imprint
-          </Link>
+          </ExternalLink>
         </li> */}
         <li>
-          {/* <Link rel="noopener noreferrer" target="_blank" href="https://gnosis-safe.io/cookie">
+          {/* <ExternalLink suppressIcon href="https://safe.global/cookie">
             Cookie Policy
-          </Link>
+          </ExternalLink>
           &nbsp;&mdash;&nbsp; */}
           <Link href="#" onClick={onCookieClick}>
             Cookie Preferences
           </Link>
         </li>
         <li>
-          <Link
-            rel="noopener noreferrer"
-            target="_blank"
-            href={`${packageJson.homepage}/releases/tag/v${packageJson.version}`}
-          >
+          <ExternalLink suppressIcon href={`${packageJson.homepage}/releases/tag/v${packageJson.version}`}>
             v{packageJson.version}
-          </Link>
+          </ExternalLink>
         </li>
         {/* <li>
           <AppstoreButton placement="footer" />

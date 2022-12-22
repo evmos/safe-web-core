@@ -31,12 +31,13 @@ export const CYPRESS_MNEMONIC = process.env.NEXT_PUBLIC_CYPRESS_MNEMONIC || ''
 export const SAFE_TOKEN_ADDRESSES: { [chainId: string]: string } = {
   [chains.eth]: '0x5aFE3855358E112B5647B952709E6165e1c1eEEe',
   [chains.rin]: '0xCFf1b0FdE85C102552D1D96084AF148f478F964A',
+  [chains.gor]: '0x61fD3b6d656F39395e32f46E2050953376c3f5Ff',
 }
 
 // Safe Apps
 export const SAFE_APPS_INFURA_TOKEN = process.env.NEXT_PUBLIC_SAFE_APPS_INFURA_TOKEN || INFURA_TOKEN
 export const SAFE_APPS_THIRD_PARTY_COOKIES_CHECK_URL = 'https://third-party-cookies-check.gnosis-safe.com'
-export const SAFE_APPS_SUPPORT_CHAT_URL = 'https://chat.gnosis-safe.io'
+export const SAFE_APPS_SUPPORT_CHAT_URL = 'https://chat.safe.global'
 export const SAFE_APPS_DEMO_SAFE_MAINNET = 'eth:0xfF501B324DC6d78dC9F983f140B9211c3EdB4dc7'
 
 // Google Tag Manager
