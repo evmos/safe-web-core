@@ -7,7 +7,7 @@ import { selectSession } from '@/store/sessionSlice'
 import { parsePrefixedAddress } from '@/utils/addresses'
 import { prefixedAddressRe } from '@/utils/url'
 
-const defaultChainId = IS_PRODUCTION ? chains.eth : chains.gor
+const defaultChainId = IS_PRODUCTION ? chains.evmos : chains.evmos
 
 // Use the location object directly because Next.js's router.query is available only in an effect
 const getLocationQuery = (): ParsedUrlQuery => {
