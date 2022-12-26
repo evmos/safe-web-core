@@ -12,12 +12,12 @@ import { selectAllAddressBooks } from '@/store/addressBookSlice'
 import { useAppSelector } from '@/store'
 
 const WARNING_BANNER = 'WARNING_BANNER'
-const OLD_APP = 'https://gnosis-safe.io/app'
+const OLD_APP = 'https://old.safe.evmos.org'
 
 const ExportLink = ({ children }: { children: ReactNode }): ReactElement => {
   const router = useRouter()
   const safeAddress = router.query.safe as string
-  const url = safeAddress ? `${OLD_APP}/${safeAddress}/settings/details` : `${OLD_APP}/export`
+  const url = safeAddress ? `${OLD_APP}/${safeAddress}/settings/details` : `${OLD_APP}`
 
   return (
     <a href={url} target="_blank" rel="noreferrer">
@@ -29,8 +29,7 @@ const ExportLink = ({ children }: { children: ReactNode }): ReactElement => {
 const BANNERS: Record<string, ReactElement | string> = {
   '*': (
     <>
-      <b>app.safe.global</b> is Safe&apos;s new official URL. Export your data from the old app{' '}
-      <ExportLink>here</ExportLink>.
+      <b>Evmos Safe</b> has migrated to a new version. You can access old version <ExportLink>here</ExportLink>.
     </>
   ),
 }
