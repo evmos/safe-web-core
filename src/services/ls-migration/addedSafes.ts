@@ -10,10 +10,12 @@ const CHAIN_PREFIXES: Record<string, string> = {
   '100': 'XDAI',
   '137': 'POLYGON',
   '246': 'ENERGY_WEB_CHAIN',
+  '9000': 'EVMOS_TESTNET',
+  '9001': 'EVMOS_MAINNET',
   '42161': 'ARBITRUM',
   '73799': 'VOLTA',
 }
-const ALL_CHAINS = ['1', '100', '137', '56', '246', '42161', '1313161554', '43114', '10', '5', '73799']
+const ALL_CHAINS = ['1', '100', '137', '56', '246', '9000', '9001', '42161', '1313161554', '43114', '10', '5', '73799']
 
 const OLD_LS_KEY = '__SAFES'
 
