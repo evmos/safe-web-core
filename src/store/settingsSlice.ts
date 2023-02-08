@@ -6,6 +6,10 @@ import type { RootState } from '@/store'
 export type SettingsState = {
   currency: string
 
+  hiddenTokens: {
+    [chainId: string]: string[]
+  }
+
   shortName: {
     show: boolean
     copy: boolean
@@ -18,6 +22,8 @@ export type SettingsState = {
 
 const initialState: SettingsState = {
   currency: 'usd',
+
+  hiddenTokens: {},
 
   shortName: {
     show: true,
@@ -46,13 +52,22 @@ export const settingsSlice = createSlice({
     setDarkMode: (state, { payload }: PayloadAction<SettingsState['theme']['darkMode']>) => {
       state.theme.darkMode = payload
     },
+    setHiddenTokensForChain: (state, { payload }: PayloadAction<{ chainId: string; assets: string[] }>) => {
+      const { chainId, assets } = payload
+      state.hiddenTokens[chainId] = assets
+    },
   },
 })
 
-export const { setCurrency, setShowShortName, setCopyShortName, setQrShortName, setDarkMode } = settingsSlice.actions
+export const { setCurrency, setShowShortName, setCopyShortName, setQrShortName, setDarkMode, setHiddenTokensForChain } =
+  settingsSlice.actions
 
 export const selectSettings = (state: RootState): SettingsState => state[settingsSlice.name]
 
 export const selectCurrency = (state: RootState): SettingsState['currency'] => {
   return state[settingsSlice.name].currency || initialState.currency
+}
+
+export const selectHiddenTokensPerChain = (state: RootState, chainId: string): string[] => {
+  return state[settingsSlice.name].hiddenTokens?.[chainId] || []
 }

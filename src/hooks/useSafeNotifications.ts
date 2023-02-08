@@ -9,8 +9,7 @@ import { isValidMasterCopy } from '@/services/contracts/safeContracts'
 import { useRouter } from 'next/router'
 import useIsSafeOwner from './useIsSafeOwner'
 import { isValidSafeVersion } from './coreSDK/safeCoreSDK'
-
-const OLD_APP_URL = 'https://gnosis-safe.io/app'
+import useSafeAddress from '@/hooks/useSafeAddress'
 
 const CLI_LINK = {
   href: 'https://github.com/5afe/safe-cli',
@@ -23,45 +22,47 @@ const CLI_LINK = {
 const useSafeNotifications = (): void => {
   const dispatch = useAppDispatch()
   const { query } = useRouter()
-  const { safe } = useSafeInfo()
+  const { safe, safeAddress } = useSafeInfo()
   const { chainId, version, implementationVersionState } = safe
   const isOwner = useIsSafeOwner()
+  const urlSafeAddress = useSafeAddress()
 
   /**
    * Show a notification when the Safe version is out of date
    */
 
   useEffect(() => {
+    if (safeAddress !== urlSafeAddress) return
     if (!isOwner) return
     if (implementationVersionState !== ImplementationVersionState.OUTDATED) return
 
-    const isOldSafe = !isValidSafeVersion(version)
+    const isUnsupported = !isValidSafeVersion(version)
 
     const id = dispatch(
       showNotification({
         variant: 'warning',
         groupKey: 'safe-outdated-version',
 
-        message: isOldSafe
-          ? `Safe version ${version} is not supported by this web app anymore. You can update your Safe via the old web app here.`
+        message: isUnsupported
+          ? `Safe version ${version} is not supported by this web app anymore. You can update your Safe via the CLI.`
           : `Your Safe version ${version} is out of date. Please update it.`,
 
-        link: {
-          href: isOldSafe
-            ? `${OLD_APP_URL}/${query.safe}/settings/details`
-            : {
+        link: isUnsupported
+          ? CLI_LINK
+          : {
+              href: {
                 pathname: AppRoutes.settings.setup,
                 query: { safe: query.safe },
               },
-          title: 'Update Safe',
-        },
+              title: 'Update Safe',
+            },
       }),
     )
 
     return () => {
       dispatch(closeNotification({ id }))
     }
-  }, [dispatch, implementationVersionState, version, query.safe, isOwner])
+  }, [dispatch, implementationVersionState, version, query.safe, isOwner, safeAddress, urlSafeAddress])
 
   /**
    * Show a notification when the Safe master copy is not supported

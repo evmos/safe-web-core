@@ -26,6 +26,7 @@ type EthHashInfoProps = {
   customAvatar?: string
   hasExplorer?: boolean
   avatarSize?: number
+  children?: React.ReactNode
 }
 
 const EthHashInfo = ({
@@ -40,6 +41,8 @@ const EthHashInfo = ({
   name,
   showCopyButton,
   hasExplorer,
+
+  children,
 }: EthHashInfoProps): ReactElement => {
   const [fallbackToIdenticon, setFallbackToIdenticon] = useState(false)
   const shouldPrefix = ethers.utils.isAddress(address)
@@ -70,7 +73,7 @@ const EthHashInfo = ({
         )}
 
         <Box className={css.addressRow}>
-          <Typography variant="body2" fontWeight="inherit">
+          <Typography fontWeight="inherit" fontSize="inherit">
             {showPrefix && shouldPrefix && prefix && <b>{prefix}:</b>}
             <span className={css.mobileAddress}>{shortenAddress(address)}</span>
             <span className={css.desktopAddress}>{shortAddress ? shortenAddress(address) : address}</span>
@@ -81,6 +84,7 @@ const EthHashInfo = ({
           )}
 
           {hasExplorer && <ExplorerLink address={address} />}
+          {children}
         </Box>
       </div>
     </div>
@@ -105,7 +109,9 @@ const PrefixedEthHashInfo = ({
       copyPrefix={settings.shortName.copy}
       {...props}
       name={name}
-    />
+    >
+      {props.children}
+    </EthHashInfo>
   )
 }
 

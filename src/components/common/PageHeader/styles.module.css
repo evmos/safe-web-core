@@ -1,17 +1,22 @@
 .container {
   padding: var(--space-4) var(--space-3) 0;
-  box-sizing: content-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   background-color: var(--color-background-main);
   z-index: 1;
-  width: calc(100% - var(--space-6));
+  width: 100%;
   position: sticky !important;
-  top: -12px;
+  top: calc(var(--header-height) - 76px);
 }
 
 .title {
   font-weight: 700;
   margin-bottom: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: var(--space-3) var(--space-2) 0;
+  }
 }

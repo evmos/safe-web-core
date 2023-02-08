@@ -31,9 +31,6 @@ import useBeamer from '@/hooks/useBeamer'
 import ErrorBoundary from '@/components/common/ErrorBoundary'
 import createEmotionCache from '@/utils/createEmotionCache'
 import MetaTags from '@/components/common/MetaTags'
-import useABTesting from '@/services/tracking/useABTesting'
-import { AbTest } from '@/services/tracking/abTesting'
-import PsaBanner from '@/components/common/PsaBanner'
 
 const GATEWAY_URL = IS_PRODUCTION || cgwDebugStorage.get() ? GATEWAY_URL_PRODUCTION : GATEWAY_URL_STAGING
 
@@ -52,7 +49,6 @@ const InitApp = (): null => {
   useTxPendingStatuses()
   useTxTracking()
   useBeamer()
-  useABTesting(AbTest.SAFE_CREATION)
 
   return null
 }
@@ -76,7 +72,12 @@ interface WebCoreAppProps extends AppProps {
   emotionCache?: EmotionCache
 }
 
-const WebCoreApp = ({ Component, pageProps, emotionCache = clientSideEmotionCache }: WebCoreAppProps): ReactElement => {
+const WebCoreApp = ({
+  Component,
+  pageProps,
+  router,
+  emotionCache = clientSideEmotionCache,
+}: WebCoreAppProps): ReactElement => {
   return (
     <StoreHydrator>
       <Head>
@@ -90,9 +91,7 @@ const WebCoreApp = ({ Component, pageProps, emotionCache = clientSideEmotionCach
 
           <InitApp />
 
-          <PsaBanner />
-
-          <PageLayout>
+          <PageLayout pathname={router.pathname}>
             <Component {...pageProps} />
           </PageLayout>
 

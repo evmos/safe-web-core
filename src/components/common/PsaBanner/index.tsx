@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
+import { useEffect } from 'react'
 import { isEmpty } from 'lodash'
 import type { FEATURES } from '@safe-global/safe-gateway-typescript-sdk'
 import { IconButton } from '@mui/material'
@@ -7,7 +8,6 @@ import styles from './index.module.css'
 import { hasFeature } from '@/utils/chains'
 import { useCurrentChain } from '@/hooks/useChains'
 import useLocalStorage from '@/services/local-storage/useLocalStorage'
-import { useRouter } from 'next/router'
 import { selectAllAddressBooks } from '@/store/addressBookSlice'
 import { useAppSelector } from '@/store'
 
@@ -15,9 +15,7 @@ const WARNING_BANNER = 'WARNING_BANNER'
 const OLD_APP = 'https://gnosis-safe.io/app'
 
 const ExportLink = ({ children }: { children: ReactNode }): ReactElement => {
-  const router = useRouter()
-  const safeAddress = router.query.safe as string
-  const url = safeAddress ? `${OLD_APP}/${safeAddress}/settings/details` : `${OLD_APP}/export`
+  const url = `${OLD_APP}/export`
 
   return (
     <a href={url} target="_blank" rel="noreferrer">
@@ -49,6 +47,12 @@ const PsaBanner = (): ReactElement | null => {
   const onClose = () => {
     setClosed(true)
   }
+
+  useEffect(() => {
+    const className = 'psaBanner'
+    document.documentElement.classList?.toggle(className, showBanner)
+    return () => document.documentElement.classList?.remove(className)
+  }, [showBanner])
 
   return showBanner ? (
     <div className={styles.banner}>

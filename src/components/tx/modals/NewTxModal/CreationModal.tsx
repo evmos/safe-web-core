@@ -35,7 +35,7 @@ const CreationModal = ({
   open: boolean
   onClose: () => void
   onTokenModalOpen: () => void
-  onNFTModalOpen: () => void
+  onNFTModalOpen?: () => void
   onContractInteraction: () => void
   shouldShowTxBuilder: boolean
 }) => {
@@ -46,17 +46,20 @@ const CreationModal = ({
       <DialogContent>
         <Box display="flex" flexDirection="column" alignItems="center" gap={2} pt={7} pb={4} width={240} m="auto">
           <SendTokensButton onClick={onTokenModalOpen} />
-          <SendNFTsButton onClick={onNFTModalOpen} />
+
+          {onNFTModalOpen && <SendNFTsButton onClick={onNFTModalOpen} />}
 
           {txBuilder.app && shouldShowTxBuilder && (
             <Link href={txBuilder.link} passHref>
-              <TxButton
-                startIcon={<img src={txBuilder.app.iconUrl} height={20} width="auto" alt={txBuilder.app.name} />}
-                variant="outlined"
-                onClick={onContractInteraction}
-              >
-                Contract interaction
-              </TxButton>
+              <a style={{ width: '100%' }}>
+                <TxButton
+                  startIcon={<img src={txBuilder.app.iconUrl} height={20} width="auto" alt={txBuilder.app.name} />}
+                  variant="outlined"
+                  onClick={onContractInteraction}
+                >
+                  Contract interaction
+                </TxButton>
+              </a>
             </Link>
           )}
         </Box>

@@ -7,6 +7,7 @@ import { selectSafeInfo, safeInfoSlice } from '@/store/safeInfoSlice'
 import { balancesSlice } from './balancesSlice'
 import { safeFormatUnits } from '@/utils/formatters'
 import type { Loadable } from './common'
+import { migrateAddedSafesOwners } from '@/services/ls-migration/addedSafes'
 
 export type AddedSafesOnChain = {
   [safeAddress: string]: {
@@ -36,7 +37,27 @@ export const addedSafesSlice = createSlice({
       // Otherwise, migrate
       return action.payload
     },
-    setAddedSafes: (state, action: PayloadAction<AddedSafesState>) => {
+    migrateLegacyOwners: (state) => {
+      for (const [chainId, addedSafesOnChain] of Object.entries(state)) {
+        for (const [safeAddress, safe] of Object.entries(addedSafesOnChain)) {
+          // Previously migrated corrupt owners
+          if (safe.owners.some(({ value }) => value !== 'string')) {
+            const migratedOwners = migrateAddedSafesOwners(safe.owners.map(({ value }) => value))
+
+            if (migratedOwners) {
+              state[chainId][safeAddress].owners = migratedOwners
+            } else {
+              delete state[chainId][safeAddress]
+            }
+          }
+        }
+
+        if (Object.keys(state[chainId]).length === 0) {
+          delete state[chainId]
+        }
+      }
+    },
+    setAddedSafes: (_, action: PayloadAction<AddedSafesState>) => {
       return action.payload
     },
     addOrUpdateSafe: (state, { payload }: PayloadAction<{ safe: SafeInfo }>) => {
@@ -81,6 +102,7 @@ export const addedSafesSlice = createSlice({
     },
   },
   extraReducers(builder) {
+    // @ts-ignore TODO: introduced with RTK 1.9.0 need to migrate
     builder.addCase(safeInfoSlice.actions.set.type, (state, { payload }: PayloadAction<Loadable<SafeInfo>>) => {
       if (!payload.data) {
         return
