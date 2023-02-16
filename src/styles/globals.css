@@ -1,19 +1,6 @@
 @import url(./vars.css);
 @import url(./onboard.css);
-
-@font-face {
-  font-family: 'DM Sans';
-  font-display: swap;
-  font-weight: 400;
-  src: url('/fonts/dm-sans-v11-latin-ext-regular.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'DM Sans';
-  font-display: swap;
-  font-weight: bold;
-  src: url('/fonts/dm-sans-v11-latin-ext-700.woff2') format('woff2');
-}
+@import url(../../node_modules/@safe-global/safe-react-components/dist/fonts.css);
 
 html,
 body {
@@ -36,12 +23,18 @@ button {
   font: inherit;
 }
 
+:focus-visible {
+  outline: 5px auto Highlight;
+  outline: 5px auto -webkit-focus-ring-color;
+}
+
 * {
   box-sizing: border-box;
 }
 
 :root {
   --header-height: 52px;
+  --footer-height: 67px;
 }
 
 input::-webkit-outer-spin-button,
@@ -89,7 +82,7 @@ input[type='number'] {
 }
 
 body.beamerAnnouncementBarTopActive {
-  padding-top: 0px !important;
+  padding-top: 0 !important;
 }
 
 #beamerLastPostTitle {

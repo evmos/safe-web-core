@@ -6,23 +6,39 @@ import css from './styles.module.css'
 import SafeLoadingError from '../SafeLoadingError'
 import Footer from '../Footer'
 import SideDrawer from './SideDrawer'
+import { AppRoutes } from '@/config/routes'
+import useDebounce from '@/hooks/useDebounce'
 
-const PageLayout = ({ children }: { children: ReactElement }): ReactElement => {
+const isNoSidebarRoute = (pathname: string): boolean => {
+  return [
+    AppRoutes.share.safeApp,
+    AppRoutes.newSafe.create,
+    AppRoutes.newSafe.load,
+    AppRoutes.welcome,
+    AppRoutes.index,
+  ].includes(pathname)
+}
+
+const PageLayout = ({ pathname, children }: { pathname: string; children: ReactElement }): ReactElement => {
+  const noSidebar = isNoSidebarRoute(pathname)
   const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true)
-
-  const toggleSidebar = () => {
-    setSidebarOpen((prev) => !prev)
-  }
+  let isAnimated = useDebounce(!noSidebar, 300)
+  if (noSidebar) isAnimated = false
 
   return (
     <>
       <header className={css.header}>
-        <Header onMenuToggle={toggleSidebar} />
+        <Header onMenuToggle={noSidebar ? undefined : setSidebarOpen} />
       </header>
 
-      <SideDrawer isOpen={isSidebarOpen} onToggle={setSidebarOpen} />
+      {!noSidebar && <SideDrawer isOpen={isSidebarOpen} onToggle={setSidebarOpen} />}
 
-      <div className={classnames(css.main, !isSidebarOpen && css.mainNoSidebar)}>
+      <div
+        className={classnames(css.main, {
+          [css.mainNoSidebar]: noSidebar || !isSidebarOpen,
+          [css.mainAnimated]: isAnimated,
+        })}
+      >
         <div className={css.content}>
           <SafeLoadingError>{children}</SafeLoadingError>
         </div>

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { MouseEvent } from 'react'
 import { useState } from 'react'
 import { Box, Button, ButtonBase, Paper, Popover, Typography } from '@mui/material'
@@ -5,20 +6,32 @@ import css from '@/components/common/ConnectWallet/styles.module.css'
 import EthHashInfo from '@/components/common/EthHashInfo'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import useOnboard, { lastWalletStorage } from '@/hooks/wallets/useOnboard'
+import useOnboard, { forgetLastWallet, switchWallet } from '@/hooks/wallets/useOnboard'
 import { useAppSelector } from '@/store'
 import { selectChainById } from '@/store/chainsSlice'
 import Identicon from '@/components/common/Identicon'
 import ChainSwitcher from '../ChainSwitcher'
 import useAddressBook from '@/hooks/useAddressBook'
 import { type ConnectedWallet } from '@/hooks/wallets/useOnboard'
-import WalletInfo from '../WalletInfo'
+import WalletInfo, { UNKNOWN_CHAIN_NAME } from '../WalletInfo'
+import { getShortName } from '@/utils/chains'
 
 const AccountCenter = ({ wallet }: { wallet: ConnectedWallet }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
   const onboard = useOnboard()
   const chainInfo = useAppSelector((state) => selectChainById(state, wallet.chainId))
   const addressBook = useAddressBook()
+
+  const prefix = useMemo(() => {
+    return chainInfo?.shortName || (wallet?.chainId && getShortName(wallet?.chainId))
+  }, [chainInfo?.shortName, wallet?.chainId])
+
+  const handleSwitchWallet = () => {
+    if (onboard) {
+      handleClose()
+      switchWallet(onboard)
+    }
+  }
 
   const handleDisconnect = () => {
     if (!wallet) return
@@ -27,7 +40,8 @@ const AccountCenter = ({ wallet }: { wallet: ConnectedWallet }) => {
       label: wallet.label,
     })
 
-    lastWalletStorage.remove()
+    forgetLastWallet()
+    handleClose()
   }
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -45,7 +59,7 @@ const AccountCenter = ({ wallet }: { wallet: ConnectedWallet }) => {
     <>
       <ButtonBase onClick={handleClick} aria-describedby={id} disableRipple sx={{ alignSelf: 'stretch' }}>
         <Box className={css.buttonContainer}>
-          {chainInfo && <WalletInfo wallet={wallet} chain={chainInfo} />}
+          <WalletInfo wallet={wallet} />
 
           <Box display="flex" alignItems="center" justifyContent="flex-end" marginLeft="auto">
             {open ? <ExpandLessIcon color="border" /> : <ExpandMoreIcon color="border" />}
@@ -76,7 +90,14 @@ const AccountCenter = ({ wallet }: { wallet: ConnectedWallet }) => {
           </Typography>
 
           <Box bgcolor="border.background" px={2} py={1} fontSize={14}>
-            <EthHashInfo address={wallet.address} showAvatar={false} showName={false} hasExplorer showCopyButton />
+            <EthHashInfo
+              address={wallet.address}
+              showAvatar={false}
+              showName={false}
+              hasExplorer
+              showCopyButton
+              prefix={prefix}
+            />
           </Box>
 
           <Box className={css.rowContainer}>
@@ -86,11 +107,21 @@ const AccountCenter = ({ wallet }: { wallet: ConnectedWallet }) => {
             </Box>
             <Box className={css.row}>
               <Typography variant="caption">Connected network</Typography>
-              <Typography variant="body2">{chainInfo?.chainName}</Typography>
+              <Typography variant="body2">{chainInfo?.chainName || UNKNOWN_CHAIN_NAME}</Typography>
             </Box>
           </Box>
 
           <ChainSwitcher fullWidth />
+
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleSwitchWallet}
+            fullWidth
+            sx={{ display: ['none', 'block'] }}
+          >
+            Switch wallet
+          </Button>
 
           <Button onClick={handleDisconnect} variant="danger" size="small" fullWidth disableElevation>
             Disconnect

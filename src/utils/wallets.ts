@@ -1,5 +1,5 @@
 import { ProviderLabel } from '@web3-onboard/injected-wallets'
-import { hasStoredPairingSession } from '@/services/pairing/connector'
+import { hasValidPairingSession } from '@/services/pairing/utils'
 import { PAIRING_MODULE_LABEL } from '@/services/pairing/module'
 import { E2E_WALLET_NAME } from '@/tests/e2e-wallet'
 import type { EthersError } from '@/utils/ethers-utils'
@@ -13,8 +13,8 @@ const isEthersRejection = (err: EthersError): boolean => {
   return err.code === ErrorCode.ACTION_REJECTED
 }
 
-export const isWalletRejection = (err: EthersError): boolean => {
-  return isEthersRejection(err) || isWCRejection(err)
+export const isWalletRejection = (err: EthersError | Error): boolean => {
+  return isEthersRejection(err as EthersError) || isWCRejection(err)
 }
 
 export const WalletNames = {
@@ -38,8 +38,8 @@ export const isWalletUnlocked = async (walletName: string): Promise<boolean> => 
   }
 
   // Our own Safe mobile pairing module
-  if (walletName === WalletNames.SAFE_MOBILE_PAIRING && hasStoredPairingSession()) {
-    return hasStoredPairingSession()
+  if (walletName === WalletNames.SAFE_MOBILE_PAIRING && hasValidPairingSession()) {
+    return hasValidPairingSession()
   }
 
   if (walletName === E2E_WALLET_NAME) {

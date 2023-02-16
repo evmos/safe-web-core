@@ -4,9 +4,11 @@ import { type ReactElement } from 'react'
 import { type AppProps } from 'next/app'
 import Head from 'next/head'
 import CssBaseline from '@mui/material/CssBaseline'
+import type { Theme } from '@mui/material/styles'
 import { ThemeProvider } from '@mui/material/styles'
 import { setBaseUrl as setGatewayBaseUrl } from '@safe-global/safe-gateway-typescript-sdk'
 import { CacheProvider, type EmotionCache } from '@emotion/react'
+import { SafeThemeProvider } from '@safe-global/safe-react-components'
 import '@/styles/globals.css'
 import { IS_PRODUCTION, GATEWAY_URL_STAGING, GATEWAY_URL_PRODUCTION } from '@/config/constants'
 import { StoreHydrator } from '@/store'
@@ -23,7 +25,7 @@ import { useInitSession } from '@/hooks/useInitSession'
 import useStorageMigration from '@/services/ls-migration'
 import Notifications from '@/components/common/Notifications'
 import CookieBanner from '@/components/common/CookieBanner'
-import { useLightDarkTheme } from '@/hooks/useDarkMode'
+import { useDarkMode } from '@/hooks/useDarkMode'
 import { cgwDebugStorage } from '@/components/sidebar/DebugToggle'
 import { useTxTracking } from '@/hooks/useTxTracking'
 import useGtm from '@/services/analytics/useGtm'
@@ -31,9 +33,6 @@ import useBeamer from '@/hooks/useBeamer'
 import ErrorBoundary from '@/components/common/ErrorBoundary'
 import createEmotionCache from '@/utils/createEmotionCache'
 import MetaTags from '@/components/common/MetaTags'
-import useABTesting from '@/services/tracking/useABTesting'
-import { AbTest } from '@/services/tracking/abTesting'
-import PsaBanner from '@/components/common/PsaBanner'
 
 const GATEWAY_URL = IS_PRODUCTION || cgwDebugStorage.get() ? GATEWAY_URL_PRODUCTION : GATEWAY_URL_STAGING
 
@@ -52,7 +51,6 @@ const InitApp = (): null => {
   useTxPendingStatuses()
   useTxTracking()
   useBeamer()
-  useABTesting(AbTest.SAFE_CREATION)
 
   return null
 }
@@ -61,14 +59,19 @@ const InitApp = (): null => {
 const clientSideEmotionCache = createEmotionCache()
 
 export const AppProviders = ({ children }: { children: ReactNode | ReactNode[] }) => {
-  const theme = useLightDarkTheme()
+  const isDarkMode = useDarkMode()
+  const themeMode = isDarkMode ? 'dark' : 'light'
 
   return (
-    <ThemeProvider theme={theme}>
-      <Sentry.ErrorBoundary showDialog fallback={ErrorBoundary}>
-        {children}
-      </Sentry.ErrorBoundary>
-    </ThemeProvider>
+    <SafeThemeProvider mode={themeMode}>
+      {(safeTheme: Theme) => (
+        <ThemeProvider theme={safeTheme}>
+          <Sentry.ErrorBoundary showDialog fallback={ErrorBoundary}>
+            {children}
+          </Sentry.ErrorBoundary>
+        </ThemeProvider>
+      )}
+    </SafeThemeProvider>
   )
 }
 
@@ -76,7 +79,12 @@ interface WebCoreAppProps extends AppProps {
   emotionCache?: EmotionCache
 }
 
-const WebCoreApp = ({ Component, pageProps, emotionCache = clientSideEmotionCache }: WebCoreAppProps): ReactElement => {
+const WebCoreApp = ({
+  Component,
+  pageProps,
+  router,
+  emotionCache = clientSideEmotionCache,
+}: WebCoreAppProps): ReactElement => {
   return (
     <StoreHydrator>
       <Head>
@@ -90,9 +98,7 @@ const WebCoreApp = ({ Component, pageProps, emotionCache = clientSideEmotionCach
 
           <InitApp />
 
-          <PsaBanner />
-
-          <PageLayout>
+          <PageLayout pathname={router.pathname}>
             <Component {...pageProps} />
           </PageLayout>
 

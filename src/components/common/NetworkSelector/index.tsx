@@ -6,7 +6,7 @@ import { useRouter } from 'next/router'
 import ChainIndicator from '../ChainIndicator'
 import css from './styles.module.css'
 import { useChainId } from '@/hooks/useChainId'
-import chains from '@/config/chains'
+import { getShortName } from '@/utils/chains'
 import type { ReactElement } from 'react'
 import { AppRoutes } from '@/config/routes'
 import { trackEvent, OVERVIEW_EVENTS } from '@/services/analytics'
@@ -18,13 +18,13 @@ const NetworkSelector = (): ReactElement => {
 
   const handleNetworkSwitch = (event: SelectChangeEvent) => {
     const selectedChainId = event.target.value
-    const newShortName = Object.entries(chains).find(([, val]) => val === selectedChainId)?.[0]
+    const newShortName = getShortName(selectedChainId)
 
     if (!newShortName) return
 
     trackEvent({ ...OVERVIEW_EVENTS.SWITCH_NETWORK, label: selectedChainId })
 
-    const shouldKeepPath = [AppRoutes.load, AppRoutes.open, AppRoutes.newSafe.create].includes(router.pathname)
+    const shouldKeepPath = [AppRoutes.newSafe.create, AppRoutes.newSafe.load].includes(router.pathname)
 
     const newRoute = {
       pathname: shouldKeepPath ? router.pathname : '/',
@@ -76,7 +76,7 @@ const NetworkSelector = (): ReactElement => {
       })}
     </Select>
   ) : (
-    <Skeleton width={94} height={31} />
+    <Skeleton width={94} height={31} sx={{ mx: 2 }} />
   )
 }
 

@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { useState } from 'react'
 import { useMemo } from 'react'
 import { hashMessage, _TypedDataEncoder } from 'ethers/lib/utils'
 import { Box } from '@mui/system'
@@ -13,12 +14,12 @@ import { InfoDetails } from '@/components/transactions/InfoDetails'
 import EthHashInfo from '@/components/common/EthHashInfo'
 import SignOrExecuteForm from '@/components/tx/SignOrExecuteForm'
 import { generateDataRowValue } from '@/components/transactions/TxDetails/Summary/TxDataRow'
-import type { SafeAppsSignMessageParams } from '../SafeAppsSignMessageModal'
+import type { SafeAppsSignMessageParams } from '@/components/safe-apps/SafeAppsSignMessageModal'
 import useChainId from '@/hooks/useChainId'
 import useAsync from '@/hooks/useAsync'
 import { getSignMessageLibDeploymentContractInstance } from '@/services/contracts/safeContracts'
 import useTxSender from '@/hooks/useTxSender'
-import { getDecodedMessage } from '../utils'
+import { getDecodedMessage } from '@/components/safe-apps/utils'
 
 type ReviewSafeAppsSignMessageProps = {
   safeAppsSignMessage: SafeAppsSignMessageParams
@@ -29,12 +30,13 @@ const ReviewSafeAppsSignMessage = ({
 }: ReviewSafeAppsSignMessageProps): ReactElement => {
   const chainId = useChainId()
   const { createTx, dispatchSafeAppsTx } = useTxSender()
+  const [submitError, setSubmitError] = useState<Error>()
 
   const isTextMessage = method === Methods.signMessage && typeof message === 'string'
   const isTypedMessage = method === Methods.signTypedMessage && isObjectEIP712TypedData(message)
 
   const signMessageDeploymentInstance = useMemo(() => getSignMessageLibDeploymentContractInstance(chainId), [chainId])
-  const signMessageAddress = signMessageDeploymentInstance.address
+  const signMessageAddress = signMessageDeploymentInstance.getAddress()
 
   const readableData = useMemo(() => {
     if (isTextMessage) {
@@ -48,9 +50,7 @@ const ReviewSafeAppsSignMessage = ({
     let txData
 
     if (isTextMessage) {
-      txData = signMessageDeploymentInstance.interface.encodeFunctionData('signMessage', [
-        hashMessage(getDecodedMessage(message)),
-      ])
+      txData = signMessageDeploymentInstance.encode('signMessage', [hashMessage(getDecodedMessage(message))])
     } else if (isTypedMessage) {
       const typesCopy = { ...message.types }
 
@@ -59,7 +59,7 @@ const ReviewSafeAppsSignMessage = ({
       // The types are not allowed to be recursive, so ever type must either be used by another type, or be
       // the primary type. And there must only be one type that is not used by any other type.
       delete typesCopy.EIP712Domain
-      txData = signMessageDeploymentInstance.interface.encodeFunctionData('signMessage', [
+      txData = signMessageDeploymentInstance.encode('signMessage', [
         _TypedDataEncoder.hash(message.domain, typesCopy, message.message),
       ])
     }
@@ -72,12 +72,18 @@ const ReviewSafeAppsSignMessage = ({
     })
   }, [message, createTx])
 
-  const handleSubmit = (txId: string) => {
-    dispatchSafeAppsTx(txId, requestId)
+  const handleSubmit = async () => {
+    setSubmitError(undefined)
+    if (!safeTx) return
+    try {
+      await dispatchSafeAppsTx(safeTx, requestId)
+    } catch (error) {
+      setSubmitError(error as Error)
+    }
   }
 
   return (
-    <SignOrExecuteForm safeTx={safeTx} onSubmit={handleSubmit} error={safeTxError}>
+    <SignOrExecuteForm safeTx={safeTx} onSubmit={handleSubmit} error={safeTxError || submitError}>
       <>
         <SendFromBlock />
 

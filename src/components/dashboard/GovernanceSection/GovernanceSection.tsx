@@ -19,10 +19,11 @@ import type { UseAppCommunicatorHandlers } from '@/components/safe-apps/AppFrame
 import useAppCommunicator from '@/components/safe-apps/AppFrame/useAppCommunicator'
 import { useCurrentChain } from '@/hooks/useChains'
 import useGetSafeInfo from '@/components/safe-apps/AppFrame/useGetSafeInfo'
-import type { SafeAppData } from '@gnosis.pm/safe-react-gateway-sdk'
+import type { SafeAppData } from '@safe-global/safe-gateway-typescript-sdk'
 import useSafeInfo from '@/hooks/useSafeInfo'
 import { fetchSafeAppFromManifest } from '@/services/safe-apps/manifest'
 import useAsync from '@/hooks/useAsync'
+import { getOrigin } from '@/components/safe-apps/utils'
 
 // A fallback component when the Safe App fails to load
 const WidgetLoadErrorFallback = () => (
@@ -69,7 +70,7 @@ const MiniAppFrame = ({ app, title }: { app: SafeAppData; title: string }) => {
     <SafeAppIframe
       key={theme}
       appUrl={`${app.url}#widget+${theme}`}
-      allowedFeaturesList={getAllowedFeaturesList(app.url)}
+      allowedFeaturesList={getAllowedFeaturesList(getOrigin(app.url))}
       title={title}
       iframeRef={iframeRef}
     />
