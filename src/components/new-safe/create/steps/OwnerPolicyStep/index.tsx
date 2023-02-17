@@ -111,7 +111,7 @@ const OwnerPolicyStep = ({
           >
             Add new owner
           </Button>
-          <Box p={2} mt={3} sx={{ backgroundColor: 'background.main', borderRadius: '8px' }}>
+          {/* <Box p={2} mt={3} sx={{ backgroundColor: 'background.main', borderRadius: '8px' }}>
             <Typography variant="subtitle1" fontWeight={700} display="inline-flex" alignItems="center" gap={1}>
               Safe Mobile owner key (optional){' '}
               <Tooltip
@@ -125,7 +125,7 @@ const OwnerPolicyStep = ({
               </Tooltip>
             </Typography>
             <Typography variant="body2">Use your mobile phone as an additional owner key</Typography>
-          </Box>
+          </Box> */}
         </Box>
 
         <Divider />
