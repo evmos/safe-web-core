@@ -1,5 +1,6 @@
 import type { SyntheticEvent, ReactElement } from 'react'
-import { Link, Typography } from '@mui/material'
+import { Typography } from '@mui/material'
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import css from './styles.module.css'
 import { useAppDispatch } from '@/store'
@@ -8,8 +9,16 @@ import { AppRoutes } from '@/config/routes'
 import packageJson from '../../../../package.json'
 //import AppstoreButton from '../AppStoreButton'
 import ExternalLink from '../ExternalLink'
+// import MUILink from '@mui/material/Link'
 
-const footerPages = [AppRoutes.welcome, AppRoutes.settings.index]
+const footerPages = [
+  AppRoutes.welcome,
+  AppRoutes.settings.index,
+  AppRoutes.imprint,
+  AppRoutes.privacy,
+  AppRoutes.cookie,
+  AppRoutes.terms,
+]
 
 const Footer = (): ReactElement | null => {
   const router = useRouter()
@@ -46,9 +55,9 @@ const Footer = (): ReactElement | null => {
           </ExternalLink>
         </li>
         <li>
-          <ExternalLink noIcon href="https://safe.global/privacy">
-            Privacy
-          </ExternalLink>
+          <Link href={AppRoutes.privacy} passHref>
+            <MUILink>Privacy</MUILink>
+          </Link>
         </li>
         <li>
           <ExternalLink noIcon href="https://safe.global/licenses">

@@ -27,7 +27,7 @@ export const nftPlatforms: Record<keyof typeof chains, Array<NftPlatform>> = {
     {
       title: 'Blur',
       logo: '/images/common/nft-blur.svg',
-      getUrl: (item) => `https://blur.io/asset/${item.address}/${item.id}`,
+      getUrl: (item) => `https://blur.io/asset/${item.address.toLowerCase()}/${item.id}`,
     },
   ],
 
@@ -40,7 +40,7 @@ export const nftPlatforms: Record<keyof typeof chains, Array<NftPlatform>> = {
     {
       title: 'OpenSea',
       logo: '/images/common/nft-opensea.svg',
-      getUrl: (item) => `https://opensea.io/matic/${item.address}/${item.id}`,
+      getUrl: (item) => `https://opensea.io/assets/matic/${item.address}/${item.id}`,
     },
   ],
 
@@ -49,6 +49,46 @@ export const nftPlatforms: Record<keyof typeof chains, Array<NftPlatform>> = {
       title: 'GnosisScan',
       logo: '/images/common/nft-gnosisscan.svg',
       getUrl: (item) => `https://gnosisscan.io/nft/${item.address}/${item.id}`,
+    },
+  ],
+
+  [chains.gor]: [
+    {
+      title: 'OpenSea',
+      logo: '/images/common/nft-opensea.svg',
+      getUrl: (item) => `https://testnets.opensea.io/assets/${item.address}/${item.id}`,
+    },
+  ],
+
+  [chains.oeth]: [
+    {
+      title: 'OpenSea',
+      logo: '/images/common/nft-opensea.svg',
+      getUrl: (item) => `https://opensea.io/assets/optimism/${item.address}/${item.id}`,
+    },
+  ],
+
+  [chains.arb1]: [
+    {
+      title: 'OpenSea',
+      logo: '/images/common/nft-opensea.svg',
+      getUrl: (item) => `https://opensea.io/assets/arbitrum/${item.address}/${item.id}`,
+    },
+  ],
+
+  [chains.avax]: [
+    {
+      title: 'OpenSea',
+      logo: '/images/common/nft-opensea.svg',
+      getUrl: (item) => `https://opensea.io/assets/avalanche/${item.address}/${item.id}`,
+    },
+  ],
+
+  [chains.bnb]: [
+    {
+      title: 'OpenSea',
+      logo: '/images/common/nft-opensea.svg',
+      getUrl: (item) => `https://opensea.io/assets/bsc/${item.address}/${item.id}`,
     },
   ],
 }

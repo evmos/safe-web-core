@@ -69,4 +69,8 @@
   .hideMobile {
     display: none;
   }
+
+  .hideSidebarMobile {
+    visibility: hidden;
+  }
 }
