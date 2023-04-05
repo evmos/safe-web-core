@@ -6,7 +6,7 @@ import { getEmptySafeApp } from '@/components/safe-apps/utils'
 import type { SafeAppDataWithPermissions } from '@/components/safe-apps/types'
 
 type UseSafeAppFromManifestReturnType = {
-  safeApp?: SafeAppDataWithPermissions
+  safeApp: SafeAppDataWithPermissions
   isLoading: boolean
 }
 
