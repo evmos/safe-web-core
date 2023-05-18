@@ -40,6 +40,10 @@ export const OVERVIEW_EVENTS = {
     action: "Open What's New",
     category: OVERVIEW_CATEGORY,
   },
+  SUGGESTIONS: {
+    action: 'Suggest any new Feature',
+    category: OVERVIEW_CATEGORY,
+  },
   HELP_CENTER: {
     action: 'Open Help Center',
     category: OVERVIEW_CATEGORY,
