@@ -8,7 +8,7 @@ const Cookies: NextPage = () => {
   return (
     <>
       <Head>
-        <title>{'Safe{Wallet} – Settings – Cookies'}</title>
+        <title>{'Evmos Safe – Settings – Cookies'}</title>
       </Head>
 
       <SettingsHeader />

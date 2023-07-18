@@ -50,7 +50,7 @@ const getStep = (status: SafeCreationStatus) => {
       return {
         description: 'Your Safe Account is created and will be picked up by our services shortly.',
         instruction:
-          'You can already open Safe{Wallet}. It might take a moment until it becomes fully usable in the interface.',
+          'You can already open Evmos Safe. It might take a moment until it becomes fully usable in the interface.',
       }
   }
 }
