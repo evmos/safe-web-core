@@ -69,7 +69,7 @@ export const CookieBanner = ({
   }
 
   const handleAcceptAll = () => {
-    setValue(CookieType.UPDATES, true)
+    // setValue(CookieType.UPDATES, true)
     setValue(CookieType.ANALYTICS, true)
     setTimeout(handleAccept, 300)
   }
@@ -109,7 +109,7 @@ export const CookieBanner = ({
                     Locally stored data for core functionality
                   </Typography>
                 </Box>
-                <Box mb={2}>
+                {/* <Box mb={2}>
                   <CookieCheckbox
                     checkboxProps={{ ...register(CookieType.UPDATES), id: 'beamer' }}
                     label="Beamer"
@@ -120,7 +120,7 @@ export const CookieBanner = ({
                   <Typography variant="body2" color={color}>
                     New features and product announcements
                   </Typography>
-                </Box>
+                </Box> */}
                 <Box>
                   <CookieCheckbox
                     checkboxProps={{ ...register(CookieType.ANALYTICS), id: 'ga' }}
