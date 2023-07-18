@@ -3,6 +3,7 @@ import InfoIcon from '@/public/images/notifications/info.svg'
 import ExternalLink from '@/components/common/ExternalLink'
 import { useAppSelector } from '@/store'
 import { selectSafeMessages } from '@/store/safeMessagesSlice'
+import { HelpCenterArticle } from '@/config/constants'
 
 const SignedMessagesHelpLink = () => {
   const safeMessages = useAppSelector(selectSafeMessages)
@@ -15,7 +16,7 @@ const SignedMessagesHelpLink = () => {
   return (
     <Box display="flex" alignItems="center" gap={1}>
       <SvgIcon component={InfoIcon} inheritViewBox color="border" fontSize="small" />
-      <ExternalLink noIcon href="https://help.safe.global/en/articles/7021891-what-are-signed-messages">
+      <ExternalLink noIcon href={HelpCenterArticle.SIGNED_MESSAGES}>
         <Typography variant="body2" fontWeight={700}>
           What are signed messages?
         </Typography>

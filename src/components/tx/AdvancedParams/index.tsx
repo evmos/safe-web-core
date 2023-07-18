@@ -1,7 +1,7 @@
 import GasParams from '@/components/tx/GasParams'
-import { useCurrentChain } from '@/hooks/useChains'
+import { useHasFeature } from '@/hooks/useChains'
 import { MODALS_EVENTS, trackEvent } from '@/services/analytics'
-import { FEATURES, hasFeature } from '@/utils/chains'
+import { FEATURES } from '@/utils/chains'
 import { useState } from 'react'
 import AdvancedParamsForm from './AdvancedParamsForm'
 import { type AdvancedParameters } from './types'
@@ -14,6 +14,7 @@ type Props = {
   nonceReadonly: boolean
   onFormSubmit: (data: AdvancedParameters) => void
   gasLimitError?: Error
+  willRelay?: boolean
 }
 
 const AdvancedParams = ({
@@ -24,10 +25,10 @@ const AdvancedParams = ({
   nonceReadonly,
   onFormSubmit,
   gasLimitError,
+  willRelay,
 }: Props) => {
   const [isEditing, setIsEditing] = useState<boolean>(false)
-  const chain = useCurrentChain()
-  const isEIP1559 = !!chain && hasFeature(chain, FEATURES.EIP1559)
+  const isEIP1559 = useHasFeature(FEATURES.EIP1559)
 
   const onEditOpen = () => {
     setIsEditing(true)
@@ -48,6 +49,7 @@ const AdvancedParams = ({
       nonceReadonly={nonceReadonly}
       onSubmit={onAdvancedSubmit}
       isEIP1559={isEIP1559}
+      willRelay={willRelay}
     />
   ) : (
     <GasParams
@@ -56,6 +58,7 @@ const AdvancedParams = ({
       isEIP1559={isEIP1559}
       gasLimitError={gasLimitError}
       onEdit={onEditOpen}
+      willRelay={willRelay}
     />
   )
 }

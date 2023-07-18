@@ -12,6 +12,7 @@ enum ErrorCodes {
   _103 = '103: Error creating a SafeTransaction',
   _104 = '104: Invalid chain short name in the URL',
   _105 = '105: Error initializing the Safe Core SDK',
+  _106 = '106: Failed to get connected wallet',
 
   _302 = '302: Error connecting to the wallet',
   _303 = '303: Error creating pairing session',
@@ -27,9 +28,13 @@ enum ErrorCodes {
   _610 = '610: Error fetching safes by owner',
   _611 = '611: Error fetching gasPrice',
   _612 = '612: Error estimating gas',
+  _613 = '613: Error fetching Safe message by message hash',
   _616 = '616: Failed to retrieve recommended nonce',
   _619 = '619: Error fetching data from master-copies',
   _620 = '620: Error loading chains',
+  _630 = '630: Error fetching remaining hourly relays',
+  _631 = '631: Transaction failed to be relayed',
+  _632 = '632: Error fetching relay task status',
 
   _700 = '700: Failed to read from local/session storage',
   _701 = '701: Failed to write to local/session storage',

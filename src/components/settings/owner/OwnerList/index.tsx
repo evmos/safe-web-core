@@ -16,7 +16,7 @@ const headCells = [
   { id: 'actions', label: '', sticky: true },
 ]
 
-export const OwnerList = ({ isGranted }: { isGranted: boolean }) => {
+export const OwnerList = () => {
   const addressBook = useAddressBook()
   const { safe } = useSafeInfo()
 
@@ -36,23 +36,23 @@ export const OwnerList = ({ isGranted }: { isGranted: boolean }) => {
             sticky: true,
             content: (
               <div className={tableCss.actions}>
-                {isGranted && <ReplaceOwnerDialog address={address} />}
+                <ReplaceOwnerDialog address={address} />
                 <EditOwnerDialog address={address} name={name} chainId={safe.chainId} />
-                {isGranted && <RemoveOwnerDialog owner={{ address, name }} />}
+                <RemoveOwnerDialog owner={{ address, name }} />
               </div>
             ),
           },
         },
       }
     })
-  }, [safe, addressBook, isGranted])
+  }, [safe, addressBook])
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Grid container spacing={3}>
         <Grid item lg={4} xs={12}>
           <Typography variant="h4" fontWeight={700}>
-            Manage Safe owners
+            Manage Safe Account owners
           </Typography>
         </Grid>
 
@@ -63,7 +63,7 @@ export const OwnerList = ({ isGranted }: { isGranted: boolean }) => {
           </Typography>
 
           <EnhancedTable rows={rows} headCells={headCells} />
-          {isGranted && <AddOwnerDialog />}
+          <AddOwnerDialog />
         </Grid>
       </Grid>
     </Box>

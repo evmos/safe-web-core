@@ -37,7 +37,7 @@ import { safeMsgSubscribe, SafeMsgEvent } from '@/services/safe-messages/safeMsg
 import { useAppSelector } from '@/store'
 import { selectSafeMessages } from '@/store/safeMessagesSlice'
 import { isSafeMessageListItem } from '@/utils/safe-message-guards'
-import { supportsEIP1271 } from '@/utils/safe-messages'
+import { isOffchainEIP1271Supported } from '@/utils/safe-messages'
 import PermissionsPrompt from '@/components/safe-apps/PermissionsPrompt'
 import { PermissionStatus } from '@/components/safe-apps/types'
 
@@ -45,9 +45,9 @@ import css from './styles.module.css'
 import SafeAppIframe from './SafeAppIframe'
 import useGetSafeInfo from './useGetSafeInfo'
 import { hasFeature, FEATURES } from '@/utils/chains'
-import { selectTokenList, TOKEN_LISTS } from '@/store/settingsSlice'
+import { selectTokenList, selectOnChainSigning, TOKEN_LISTS } from '@/store/settingsSlice'
 
-const UNKNOWN_APP_NAME = 'Unknown App'
+const UNKNOWN_APP_NAME = 'Unknown Safe App'
 
 type AppFrameProps = {
   appUrl: string
@@ -57,11 +57,15 @@ type AppFrameProps = {
 const AppFrame = ({ appUrl, allowedFeaturesList }: AppFrameProps): ReactElement => {
   const chainId = useChainId()
   const [txModalState, openTxModal, closeTxModal] = useTxModal()
-  const [settings, setSettings] = useState<SafeSettings>({})
+  // We use offChainSigning by default
+  const [settings, setSettings] = useState<SafeSettings>({
+    offChainSigning: true,
+  })
   const safeMessages = useAppSelector(selectSafeMessages)
   const [signMessageModalState, openSignMessageModal, closeSignMessageModal] = useSignMessageModal()
   const { safe, safeLoaded, safeAddress } = useSafeInfo()
   const tokenlist = useAppSelector(selectTokenList)
+  const onChainSigning = useAppSelector(selectOnChainSigning)
 
   const addressBook = useAddressBook()
   const chain = useCurrentChain()
@@ -89,8 +93,11 @@ const AppFrame = ({ appUrl, allowedFeaturesList }: AppFrameProps): ReactElement 
       message: string | EIP712TypedData,
       requestId: string,
       method: Methods.signMessage | Methods.signTypedMessage,
+      sdkVersion: string,
     ) => {
-      openSignMessageModal(message, requestId, method, !!settings.offChainSigning)
+      const isOffChainSigningSupported = isOffchainEIP1271Supported(safe, chain, sdkVersion)
+      const signOffChain = isOffChainSigningSupported && !onChainSigning
+      openSignMessageModal(message, requestId, method, signOffChain && !!settings.offChainSigning)
     },
     onGetPermissions: getPermissions,
     onSetPermissions: setPermissionsRequest,
@@ -106,11 +113,13 @@ const AppFrame = ({ appUrl, allowedFeaturesList }: AppFrameProps): ReactElement 
       origin: document.location.origin,
     }),
     onGetSafeInfo: useGetSafeInfo(),
-    onGetSafeBalances: (currency) =>
-      getBalances(chainId, safeAddress, currency, {
+    onGetSafeBalances: (currency) => {
+      const isDefaultTokenlistSupported = chain && hasFeature(chain, FEATURES.DEFAULT_TOKENLIST)
+      return getBalances(chainId, safeAddress, currency, {
         exclude_spam: true,
-        trusted: TOKEN_LISTS.TRUSTED === tokenlist,
-      }),
+        trusted: isDefaultTokenlistSupported && TOKEN_LISTS.TRUSTED === tokenlist,
+      })
+    },
     onGetChainInfo: () => {
       if (!chain) return
 
@@ -125,17 +134,12 @@ const AppFrame = ({ appUrl, allowedFeaturesList }: AppFrameProps): ReactElement 
       }
     },
     onSetSafeSettings: (safeSettings: SafeSettings) => {
-      const isEIP1271Supported = supportsEIP1271(safe) && chain && hasFeature(chain, FEATURES.EIP1271)
       const newSettings: SafeSettings = {
         ...settings,
-        offChainSigning: isEIP1271Supported && !!safeSettings.offChainSigning,
+        offChainSigning: !!safeSettings.offChainSigning,
       }
 
       setSettings(newSettings)
-
-      if (!isEIP1271Supported && safeSettings.offChainSigning) {
-        console.warn('The connected Safe does not support off-chain signing.')
-      }
 
       return newSettings
     },
@@ -201,18 +205,13 @@ const AppFrame = ({ appUrl, allowedFeaturesList }: AppFrameProps): ReactElement 
   }, [appName, chainId, closeSignMessageModal, closeTxModal, communicator, signMessageModalState, txModalState])
 
   useEffect(() => {
-    const unsubFns = [SafeMsgEvent.PROPOSE, SafeMsgEvent.CONFIRM_PROPOSE].map((event) => {
-      return safeMsgSubscribe(event, (details) => {
-        const requestId = 'requestId' in details ? details.requestId : undefined
-        if (signMessageModalState.requestId === requestId) {
-          communicator?.send({ messageHash: details.messageHash }, requestId)
-        }
-      })
+    const unsubscribe = safeMsgSubscribe(SafeMsgEvent.SIGNATURE_PREPARED, ({ messageHash, requestId, signature }) => {
+      if (signMessageModalState.requestId === requestId) {
+        communicator?.send({ messageHash, signature }, requestId)
+      }
     })
 
-    return () => {
-      unsubFns.forEach((unsub) => unsub())
-    }
+    return unsubscribe
   }, [communicator, signMessageModalState.requestId])
 
   const onSafeAppsModalClose = () => {
@@ -248,7 +247,7 @@ const AppFrame = ({ appUrl, allowedFeaturesList }: AppFrameProps): ReactElement 
   return (
     <>
       <Head>
-        <title>Safe Apps - Viewer - {remoteApp ? remoteApp.name : UNKNOWN_APP_NAME}</title>
+        <title>{`Safe Apps - Viewer - ${remoteApp ? remoteApp.name : UNKNOWN_APP_NAME}`}</title>
       </Head>
 
       <div className={css.wrapper}>

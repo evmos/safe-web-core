@@ -19,6 +19,8 @@ type SingleTxDecodedProps = {
   actionTitle: string
   showDelegateCallWarning: boolean
   variant?: AccordionProps['variant']
+  expanded?: boolean
+  onChange?: AccordionProps['onChange']
 }
 
 export const SingleTxDecoded = ({
@@ -27,10 +29,12 @@ export const SingleTxDecoded = ({
   actionTitle,
   showDelegateCallWarning,
   variant,
+  expanded,
+  onChange,
 }: SingleTxDecodedProps) => {
   const chain = useCurrentChain()
   const method = tx.dataDecoded?.method || ''
-  const { decimals, symbol } = chain!.nativeCurrency
+  const { decimals, symbol } = chain?.nativeCurrency || {}
   const amount = tx.value ? formatVisualAmount(tx.value, decimals) : 0
 
   let details
@@ -50,7 +54,7 @@ export const SingleTxDecoded = ({
   const isSpendingLimitMethod = isSetAllowance(tx.dataDecoded?.method) || isDeleteAllowance(tx.dataDecoded?.method)
 
   return (
-    <Accordion variant={variant} defaultExpanded={isDelegateCall}>
+    <Accordion variant={variant} expanded={expanded} onChange={onChange}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <div className={css.summary}>
           <CodeIcon />

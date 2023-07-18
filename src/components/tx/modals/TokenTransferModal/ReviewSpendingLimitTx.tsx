@@ -10,8 +10,6 @@ import useBalances from '@/hooks/useBalances'
 import useSpendingLimit from '@/hooks/useSpendingLimit'
 import useSpendingLimitGas from '@/hooks/useSpendingLimitGas'
 import AdvancedParams, { useAdvancedParams } from '@/components/tx/AdvancedParams'
-import useChainId from '@/hooks/useChainId'
-import { useWeb3 } from '@/hooks/wallets/web3'
 import { parseUnits } from '@ethersproject/units'
 import { EMPTY_DATA, ZERO_ADDRESS } from '@safe-global/safe-core-sdk/dist/src/utils/constants'
 import useSafeInfo from '@/hooks/useSafeInfo'
@@ -21,6 +19,8 @@ import { useCurrentChain } from '@/hooks/useChains'
 import { dispatchSpendingLimitTxExecution } from '@/services/tx/tx-sender'
 import { getTxOptions } from '@/utils/transactions'
 import { MODALS_EVENTS, trackEvent } from '@/services/analytics'
+import useOnboard from '@/hooks/wallets/useOnboard'
+import { WrongChainWarning } from '@/components/tx/WrongChainWarning'
 
 export type SpendingLimitTxParams = {
   safeAddress: string
@@ -36,10 +36,9 @@ export type SpendingLimitTxParams = {
 const ReviewSpendingLimitTx = ({ params, onSubmit }: TokenTransferModalProps): ReactElement => {
   const [isSubmittable, setIsSubmittable] = useState<boolean>(true)
   const [submitError, setSubmitError] = useState<Error | undefined>()
-  const chainId = useChainId()
   const currentChain = useCurrentChain()
-  const provider = useWeb3()
-  const { safeAddress } = useSafeInfo()
+  const onboard = useOnboard()
+  const { safe, safeAddress } = useSafeInfo()
   const { balances } = useBalances()
   const token = balances.items.find((item) => item.tokenInfo.address === params.tokenAddress)
   const spendingLimit = useSpendingLimit(token?.tokenInfo)
@@ -74,7 +73,7 @@ const ReviewSpendingLimitTx = ({ params, onSubmit }: TokenTransferModalProps): R
 
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault()
-    if (!provider) return
+    if (!onboard) return
 
     trackEvent(MODALS_EVENTS.USE_SPENDING_LIMIT)
 
@@ -84,7 +83,7 @@ const ReviewSpendingLimitTx = ({ params, onSubmit }: TokenTransferModalProps): R
     const txOptions = getTxOptions(advancedParams, currentChain)
 
     try {
-      await dispatchSpendingLimitTxExecution(txParams, txOptions, chainId, provider)
+      await dispatchSpendingLimitTxExecution(txParams, txOptions, onboard, safe.chainId, safeAddress)
 
       onSubmit()
     } catch (err) {
@@ -116,6 +115,8 @@ const ReviewSpendingLimitTx = ({ params, onSubmit }: TokenTransferModalProps): R
           nonceReadonly={false}
           onFormSubmit={setManualParams}
         />
+
+        <WrongChainWarning />
 
         {submitError && (
           <ErrorMessage error={submitError}>Error submitting the transaction. Please try again.</ErrorMessage>

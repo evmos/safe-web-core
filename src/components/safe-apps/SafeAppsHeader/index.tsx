@@ -17,8 +17,7 @@ const SafeAppsHeader = (): ReactElement => {
 
         {/* Safe Apps Subtitle */}
         <Typography className={css.subtitle}>
-          Connect to your favorite web3 applications with your Safe smart contract account. Safer and more efficient,
-          right from the interface.
+          Connect to your favourite web3 applications with your Safe Account, securely and efficiently.
         </Typography>
       </Box>
 

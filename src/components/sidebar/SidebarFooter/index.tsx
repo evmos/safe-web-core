@@ -16,12 +16,11 @@ import { openCookieBanner } from '@/store/popupSlice'
 import SuggestionIcon from '@/public/images/sidebar/lightbulb_icon.svg'
 import { ListItem } from '@mui/material'
 import DebugToggle from '../DebugToggle'
-import { IS_PRODUCTION } from '@/config/constants'
+import {/* HELP_CENTER_URL, */ IS_PRODUCTION } from '@/config/constants'
 import Track from '@/components/common/Track'
 import { OVERVIEW_EVENTS } from '@/services/analytics/events/overview'
 import { useCurrentChain } from '@/hooks/useChains'
 
-// const WHATS_NEW_PATH = 'https://help.safe.global/en/'
 const SUGGESTION_PATH =
   'https://docs.google.com/forms/d/e/1FAIpQLSfojsADYCiWq9AqbLqsUTzCDSpA8FMgdAQp0Pyl0BOeurlq9A/viewform?usp=sf_link'
 
@@ -66,7 +65,7 @@ const SidebarFooter = (): ReactElement => {
 
       <Track {...OVERVIEW_EVENTS.HELP_CENTER}>
         <ListItem disablePadding>
-          <a target="_blank" rel="noopener noreferrer" href={WHATS_NEW_PATH} style={{ width: '100%' }}>
+          <a target="_blank" rel="noopener noreferrer" href={HELP_CENTER_URL} style={{ width: '100%' }}>
             <SidebarListItemButton>
               <SidebarListItemIcon color="primary">
                 <HelpCenterIcon />

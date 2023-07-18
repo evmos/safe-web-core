@@ -1,27 +1,37 @@
+import { useEffect } from 'react'
 import Head from 'next/head'
+import { FEATURES } from '@safe-global/safe-gateway-typescript-sdk'
+import { useRouter } from 'next/router'
 import type { NextPage } from 'next'
 
 import PaginatedMsgs from '@/components/safe-messages/PaginatedMsgs'
 import TxHeader from '@/components/transactions/TxHeader'
-import { Box } from '@mui/material'
 import SignedMessagesHelpLink from '@/components/transactions/SignedMessagesHelpLink'
-import TxNavigation from '../../components/transactions/TxNavigation'
+import { AppRoutes } from '@/config/routes'
+import { useCurrentChain } from '@/hooks/useChains'
+import { hasFeature } from '@/utils/chains'
 
 const Messages: NextPage = () => {
+  const chain = useCurrentChain()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!chain || hasFeature(chain, FEATURES.EIP1271)) {
+      return
+    }
+
+    router.replace({ ...router, pathname: AppRoutes.transactions.history })
+  }, [router, chain])
+
   return (
     <>
       <Head>
-        <title>Safe – Messages</title>
+        <title>{'Safe{Wallet} – Messages'}</title>
       </Head>
 
-      <TxHeader
-        action={
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <TxNavigation />
-            <SignedMessagesHelpLink />
-          </Box>
-        }
-      />
+      <TxHeader>
+        <SignedMessagesHelpLink />
+      </TxHeader>
 
       <main>
         <PaginatedMsgs />

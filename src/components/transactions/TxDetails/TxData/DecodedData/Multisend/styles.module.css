@@ -1,0 +1,20 @@
+.actionsHeader {
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: auto !important;
+  padding-left: 16px;
+  padding-right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.actionsHeader button {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+.divider {
+  margin-top: 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--color-border-light);
+}

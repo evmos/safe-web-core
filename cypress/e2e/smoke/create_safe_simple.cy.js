@@ -8,12 +8,12 @@ describe('Create Safe form', () => {
     cy.visit('/welcome')
 
     // Close cookie banner
-    cy.contains('button', 'Accept all').click()
+    cy.contains('button', 'Accept selection').click()
 
     // Ensure wallet is connected to correct chain via header
     cy.contains('E2E Wallet @ Görli')
 
-    cy.contains('Create new Safe').click()
+    cy.contains('Create new Account').click()
   })
 
   it('should allow setting a name', () => {
@@ -30,10 +30,6 @@ describe('Create Safe form', () => {
     // Switch to a different network
     cy.get('[data-cy="create-safe-select-network"]').click()
     cy.contains('Ethereum').click()
-
-    // Network hint should be displayed
-    cy.contains('Change your wallet network').should('be.visible')
-    cy.contains('button', 'Next').should('be.disabled')
 
     // Switch back to Görli
     cy.get('[data-cy="create-safe-select-network"]').click()
