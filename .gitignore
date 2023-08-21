@@ -41,7 +41,7 @@ yarn-error.log*
 # yalc
 .yalc
 yalc.lock
-.env
+#.env
 
 /cypress/videos
 /cypress/screenshots
