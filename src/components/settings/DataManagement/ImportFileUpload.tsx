@@ -52,7 +52,7 @@ export const ImportFileUpload = ({
 
   return (
     <>
-      <Typography>Import {'Evmos Safe'} data by clicking or dragging a file below.</Typography>
+      <Typography>Import {'Evmos Safe'} data by uploading a file in the area below.</Typography>
 
       <FileUpload
         fileType={FileTypes.JSON}
@@ -74,7 +74,7 @@ export const ImportFileUpload = ({
             mr: 0.5,
           }}
         />
-        Only JSON files exported from a {'Evmos Safe'} can be imported.
+        Only JSON files exported from the {'Evmos Safe'} can be imported.
       </Typography>
     </>
   )

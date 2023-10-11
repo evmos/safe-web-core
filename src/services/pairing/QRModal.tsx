@@ -8,6 +8,7 @@ import { StoreHydrator } from '@/store'
 import { AppProviders } from '@/pages/_app'
 import { PAIRING_MODULE_LABEL } from '@/services/pairing/module'
 import css from './styles.module.css'
+import PairingDeprecationWarning from '@/components/common/PairingDetails/PairingDeprecationWarning'
 
 const WRAPPER_ID = 'safe-mobile-qr-modal'
 const QR_CODE_SIZE = 200
@@ -45,6 +46,7 @@ const close = () => {
   const wrapper = document.getElementById(WRAPPER_ID)
   if (wrapper) {
     document.body.removeChild(wrapper)
+    document.body.style.overflow = ''
   }
 }
 
@@ -74,6 +76,7 @@ const Modal = ({ uri, cb }: { uri: string; cb: () => void }) => {
             </IconButton>
           </DialogTitle>
           <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <PairingDeprecationWarning />
             <PairingQRCode size={QR_CODE_SIZE} />
             <br />
             <PairingDescription />

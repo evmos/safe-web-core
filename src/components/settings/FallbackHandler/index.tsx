@@ -7,8 +7,8 @@ import type { ReactElement } from 'react'
 import EthHashInfo from '@/components/common/EthHashInfo'
 import AlertIcon from '@/public/images/common/alert.svg'
 import useSafeInfo from '@/hooks/useSafeInfo'
-import { getFallbackHandlerDeployment } from '@safe-global/safe-deployments'
-import { HelpCenterArticle, LATEST_SAFE_VERSION } from '@/config/constants'
+import { getFallbackHandlerContractDeployment } from '@/services/contracts/deployments'
+import { HelpCenterArticle } from '@/config/constants'
 import ExternalLink from '@/components/common/ExternalLink'
 import { useTxBuilderApp } from '@/hooks/safe-apps/useTxBuilderApp'
 
@@ -23,17 +23,15 @@ export const FallbackHandler = (): ReactElement | null => {
   const supportsFallbackHandler = !!safe.version && semverSatisfies(safe.version, FALLBACK_HANDLER_VERSION)
 
   const fallbackHandlerDeployment = useMemo(() => {
-    return getFallbackHandlerDeployment({
-      version: safe.version || LATEST_SAFE_VERSION,
-      network: safe.chainId,
-    })
+    return getFallbackHandlerContractDeployment(safe.chainId, safe.version)
   }, [safe.version, safe.chainId])
 
   if (!supportsFallbackHandler) {
     return null
   }
 
-  const isOfficial = !!safe.fallbackHandler && safe.fallbackHandler.value === fallbackHandlerDeployment?.defaultAddress
+  const isOfficial =
+    !!safe.fallbackHandler && safe.fallbackHandler.value === fallbackHandlerDeployment?.networkAddresses[safe.chainId]
 
   const tooltip = !safe.fallbackHandler ? (
     <>
@@ -42,7 +40,7 @@ export const FallbackHandler = (): ReactElement | null => {
         <>
           {' '}
           It can be set via the{' '}
-          <NextLink href={txBuilder.link} passHref>
+          <NextLink href={txBuilder.link} passHref legacyBehavior>
             <Link>Transaction Builder</Link>
           </NextLink>
           .
@@ -56,7 +54,7 @@ export const FallbackHandler = (): ReactElement | null => {
         <>
           {' '}
           It can be altered via the{' '}
-          <NextLink href={txBuilder.link} passHref>
+          <NextLink href={txBuilder.link} passHref legacyBehavior>
             <Link>Transaction Builder</Link>
           </NextLink>
           .

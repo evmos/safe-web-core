@@ -22,7 +22,7 @@ import { OperationType } from '@safe-global/safe-core-sdk-types/dist/src/types'
 import { getReadOnlyGnosisSafeContract } from '@/services/contracts/safeContracts'
 import extractTxInfo from '@/services/tx/extractTxInfo'
 import type { AdvancedParameters } from '@/components/tx/AdvancedParams'
-import type { TransactionOptions, SafeTransaction } from '@safe-global/safe-core-sdk-types'
+import type { SafeTransaction, TransactionOptions } from '@safe-global/safe-core-sdk-types'
 import { FEATURES, hasFeature } from '@/utils/chains'
 import uniqBy from 'lodash/uniqBy'
 import { Errors, logError } from '@/services/exceptions'
@@ -30,6 +30,7 @@ import { Multi_send__factory } from '@/types/contracts'
 import { ethers } from 'ethers'
 import { type BaseTransaction } from '@safe-global/safe-apps-sdk'
 import { id } from 'ethers/lib/utils'
+import { isEmptyHexData } from '@/utils/hex'
 
 export const makeTxFromDetails = (txDetails: TransactionDetails): Transaction => {
   const getMissingSigners = ({
@@ -179,6 +180,8 @@ export const getQueuedTransactionCount = (txPage?: TransactionListPage): string 
 }
 
 export const getTxOrigin = (app?: SafeAppData): string | undefined => {
+  const MAX_ORIGIN_LENGTH = 200
+
   if (!app) {
     return
   }
@@ -186,9 +189,16 @@ export const getTxOrigin = (app?: SafeAppData): string | undefined => {
   let origin: string | undefined
 
   try {
-    origin = JSON.stringify({ name: app.name, url: app.url })
+    // Must include empty string to avoid including the length of `undefined`
+    const maxUrlLength = MAX_ORIGIN_LENGTH - JSON.stringify({ url: '', name: '' }).length
+    const trimmedUrl = app.url.slice(0, maxUrlLength)
+
+    const maxNameLength = Math.max(0, maxUrlLength - trimmedUrl.length)
+    const trimmedName = app.name.slice(0, maxNameLength)
+
+    origin = JSON.stringify({ url: trimmedUrl, name: trimmedName })
   } catch (e) {
-    logError(Errors._808, (e as Error).message)
+    logError(Errors._808, e)
   }
 
   return origin
@@ -265,4 +275,8 @@ export const decodeMultiSendTxs = (encodedMultiSendData: string): BaseTransactio
   }
 
   return txs
+}
+
+export const isRejectionTx = (tx?: SafeTransaction) => {
+  return !!tx && !!tx.data.data && !!isEmptyHexData(tx.data.data) && tx.data.value === '0'
 }

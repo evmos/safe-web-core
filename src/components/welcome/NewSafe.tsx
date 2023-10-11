@@ -23,6 +23,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useTheme } from '@mui/material/styles'
 import { DataWidget } from '@/components/welcome/DataWidget'
 import useWallet from '@/hooks/wallets/useWallet'
+import { useCurrentChain } from '@/hooks/useChains'
 
 const NewSafe = () => {
   const [expanded, setExpanded] = useState(true)
@@ -30,6 +31,7 @@ const NewSafe = () => {
   const theme = useTheme()
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'))
   const wallet = useWallet()
+  const currentChain = useCurrentChain()
 
   useEffect(() => {
     setExpanded(!isSmallScreen)
@@ -57,9 +59,23 @@ const NewSafe = () => {
             </Accordion>
           </Box>
 
-          <Box mt={2}>
+          <Box mt={2} display={{ xs: 'none', md: 'block' }}>
             <DataWidget />
           </Box>
+        </Box>
+      </Grid>
+      <Grid
+        item
+        xs={12}
+        md={4}
+        lg={3.5}
+        minWidth={{ md: 480 }}
+        className={css.sidebar}
+        display={{ md: 'none' }}
+        order={3}
+      >
+        <Box>
+          <DataWidget />
         </Box>
       </Grid>
 
@@ -96,7 +112,12 @@ const NewSafe = () => {
                 <Track {...CREATE_SAFE_EVENTS.CREATE_BUTTON}>
                   <Button
                     variant={wallet ? 'contained' : 'outlined'}
-                    onClick={() => router.push(AppRoutes.newSafe.create)}
+                    onClick={() =>
+                      router.push({
+                        pathname: AppRoutes.newSafe.create,
+                        query: { chain: currentChain?.shortName },
+                      })
+                    }
                   >
                     + Create new Account
                   </Button>
@@ -117,7 +138,15 @@ const NewSafe = () => {
 
                 <span style={{ flex: 1 }} />
                 <Track {...LOAD_SAFE_EVENTS.LOAD_BUTTON}>
-                  <Button variant="outlined" onClick={() => router.push(AppRoutes.newSafe.load)}>
+                  <Button
+                    variant="outlined"
+                    onClick={() =>
+                      router.push({
+                        pathname: AppRoutes.newSafe.load,
+                        query: { chain: currentChain?.shortName },
+                      })
+                    }
+                  >
                     Add existing Account
                   </Button>
                 </Track>

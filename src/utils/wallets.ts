@@ -1,13 +1,9 @@
-import { ProviderLabel } from '@web3-onboard/injected-wallets'
-import { hasValidPairingSession } from '@/services/pairing/utils'
-import { PAIRING_MODULE_LABEL } from '@/services/pairing/module'
-import { E2E_WALLET_NAME } from '@/tests/e2e-wallet'
 import type { EthersError } from '@/utils/ethers-utils'
 import { ErrorCode } from '@ethersproject/logger'
 import { type ConnectedWallet } from '@/hooks/wallets/useOnboard'
 import { getWeb3ReadOnly, isSmartContract } from '@/hooks/wallets/web3'
 import { WALLET_KEYS } from '@/hooks/wallets/consts'
-import { WALLET_CONNECT_V1_MODULE_NAME } from '@/hooks/wallets/wallets'
+import { memoize } from 'lodash'
 
 const isWCRejection = (err: Error): boolean => {
   return /rejected/.test(err?.message)
@@ -21,40 +17,8 @@ export const isWalletRejection = (err: EthersError | Error): boolean => {
   return isEthersRejection(err as EthersError) || isWCRejection(err)
 }
 
-export const WalletNames = {
-  METAMASK: ProviderLabel.MetaMask,
-  WALLET_CONNECT: WALLET_CONNECT_V1_MODULE_NAME,
-  SAFE_MOBILE_PAIRING: PAIRING_MODULE_LABEL,
-}
-
-/* Check if the wallet is unlocked. */
-export const isWalletUnlocked = async (walletName: string): Promise<boolean> => {
-  if (typeof window === 'undefined') return false
-
-  if (window.ethereum?.isConnected?.()) {
-    return true
-  }
-
-  // Only MetaMask exposes a method to check if the wallet is unlocked
-  if (walletName === WalletNames.METAMASK) {
-    return window.ethereum?._metamask?.isUnlocked?.() || false
-  }
-
-  // Wallet connect creates a localStorage entry when connected and removes it when disconnected
-  if (walletName === WalletNames.WALLET_CONNECT) {
-    return window.localStorage.getItem('walletconnect') !== null
-  }
-
-  // Our own Safe mobile pairing module
-  if (walletName === WalletNames.SAFE_MOBILE_PAIRING && hasValidPairingSession()) {
-    return hasValidPairingSession()
-  }
-
-  if (walletName === E2E_WALLET_NAME) {
-    return Boolean(window.Cypress)
-  }
-
-  return false
+export const isLedger = (wallet: ConnectedWallet): boolean => {
+  return wallet.label.toUpperCase() === WALLET_KEYS.LEDGER
 }
 
 export const isHardwareWallet = (wallet: ConnectedWallet): boolean => {
@@ -63,12 +27,15 @@ export const isHardwareWallet = (wallet: ConnectedWallet): boolean => {
   )
 }
 
-export const isSmartContractWallet = async (wallet: ConnectedWallet) => {
-  const provider = getWeb3ReadOnly()
+export const isSmartContractWallet = memoize(
+  async (wallet: ConnectedWallet) => {
+    const provider = getWeb3ReadOnly()
 
-  if (!provider) {
-    throw new Error('Provider not found')
-  }
+    if (!provider) {
+      throw new Error('Provider not found')
+    }
 
-  return isSmartContract(provider, wallet.address)
-}
+    return isSmartContract(provider, wallet.address)
+  },
+  ({ chainId, address }) => chainId + address,
+)

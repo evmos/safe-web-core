@@ -6,6 +6,7 @@ import type { JsonRpcProvider } from '@ethersproject/providers'
 import { POLLING_INTERVAL } from '@/config/constants'
 import { Errors, logError } from '@/services/exceptions'
 import { SafeCreationStatus } from '@/components/new-safe/create/steps/StatusStep/useSafeCreation'
+import { asError } from '../exceptions/utils'
 
 // Provider must be passed as an argument as it is undefined until initialised by `useInitWeb3`
 export const waitForTx = async (provider: JsonRpcProvider, txId: string, txHash: string) => {
@@ -33,7 +34,7 @@ export const waitForTx = async (provider: JsonRpcProvider, txId: string, txHash:
   } catch (error) {
     txDispatch(TxEvent.FAILED, {
       txId,
-      error: error as Error,
+      error: asError(error),
     })
   }
 }
@@ -81,7 +82,7 @@ const getRelayTxStatus = async (taskId: string): Promise<{ task: TransactionStat
       })
     })
   } catch (error) {
-    logError(Errors._632, (error as Error).message)
+    logError(Errors._632, error)
     return
   }
 
@@ -90,7 +91,13 @@ const getRelayTxStatus = async (taskId: string): Promise<{ task: TransactionStat
 
 const WAIT_FOR_RELAY_TIMEOUT = 3 * 60_000 // 3 minutes
 
-export const waitForRelayedTx = (taskId: string, txIds: string[], safeAddress: string, groupKey?: string): void => {
+export const waitForRelayedTx = (
+  taskId: string,
+  txIds: string[],
+  safeAddress: string,
+  groupKey?: string,
+  humanDescription?: string,
+): void => {
   let intervalId: NodeJS.Timeout
   let failAfterTimeoutId: NodeJS.Timeout
 
@@ -109,6 +116,7 @@ export const waitForRelayedTx = (taskId: string, txIds: string[], safeAddress: s
             txId,
             groupKey,
             safeAddress,
+            humanDescription,
           }),
         )
         break
@@ -118,6 +126,7 @@ export const waitForRelayedTx = (taskId: string, txIds: string[], safeAddress: s
             txId,
             error: new Error(`Relayed transaction reverted by EVM.`),
             groupKey,
+            humanDescription,
           }),
         )
         break
@@ -127,6 +136,7 @@ export const waitForRelayedTx = (taskId: string, txIds: string[], safeAddress: s
             txId,
             error: new Error(`Relayed transaction was blacklisted by relay provider.`),
             groupKey,
+            humanDescription,
           }),
         )
         break
@@ -136,6 +146,7 @@ export const waitForRelayedTx = (taskId: string, txIds: string[], safeAddress: s
             txId,
             error: new Error(`Relayed transaction was cancelled by relay provider.`),
             groupKey,
+            humanDescription,
           }),
         )
         break
@@ -145,6 +156,7 @@ export const waitForRelayedTx = (taskId: string, txIds: string[], safeAddress: s
             txId,
             error: new Error(`Relayed transaction was not found.`),
             groupKey,
+            humanDescription,
           }),
         )
         break
@@ -167,6 +179,7 @@ export const waitForRelayedTx = (taskId: string, txIds: string[], safeAddress: s
           } minutes. Be aware that it might still be relayed.`,
         ),
         groupKey,
+        humanDescription,
       }),
     )
 

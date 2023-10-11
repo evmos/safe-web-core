@@ -15,10 +15,17 @@ export type AnalyticsEvent = {
   category: string
   action: string
   label?: EventLabel
+  chainId?: string
 }
 
 export type SafeAppSDKEvent = {
   method: string
   ethMethod: string
   version: string
+}
+
+export enum DeviceType {
+  DESKTOP = 'desktop',
+  MOBILE = 'mobile',
+  TABLET = 'tablet',
 }

@@ -14,12 +14,15 @@ import useChainId from '@/hooks/useChainId'
 import SafeLogo from '@/public/images/logo.svg'
 import Link from 'next/link'
 import useSafeAddress from '@/hooks/useSafeAddress'
+import BatchIndicator from '@/components/batch/BatchIndicator'
+import { PushNotificationsBanner } from '@/components/settings/PushNotifications/PushNotificationsBanner'
 
 type HeaderProps = {
   onMenuToggle?: Dispatch<SetStateAction<boolean>>
+  onBatchToggle?: Dispatch<SetStateAction<boolean>>
 }
 
-const Header = ({ onMenuToggle }: HeaderProps): ReactElement => {
+const Header = ({ onMenuToggle, onBatchToggle }: HeaderProps): ReactElement => {
   const chainId = useChainId()
   const safeAddress = useSafeAddress()
   const showSafeToken = safeAddress && !!getSafeTokenAddress(chainId)
@@ -36,6 +39,12 @@ const Header = ({ onMenuToggle }: HeaderProps): ReactElement => {
     }
   }
 
+  const handleBatchToggle = () => {
+    if (onBatchToggle) {
+      onBatchToggle((isOpen) => !isOpen)
+    }
+  }
+
   return (
     <Paper className={css.container}>
       <div className={classnames(css.element, css.menuButton, !onMenuToggle ? css.hideSidebarMobile : null)}>
@@ -46,9 +55,7 @@ const Header = ({ onMenuToggle }: HeaderProps): ReactElement => {
 
       <div className={classnames(css.element, css.hideMobile, css.logo)}>
         <Link href={logoHref} passHref>
-          <a>
-            <SafeLogo alt="Safe logo" />
-          </a>
+          <SafeLogo alt="Safe logo" />
         </Link>
       </div>
 
@@ -58,8 +65,16 @@ const Header = ({ onMenuToggle }: HeaderProps): ReactElement => {
         </div>
       )}
 
-      <div className={classnames(css.element, css.hideMobile)}>
-        <NotificationCenter />
+      {safeAddress && (
+        <div className={classnames(css.element, css.hideMobile)}>
+          <BatchIndicator onClick={handleBatchToggle} />
+        </div>
+      )}
+
+      <div className={css.element}>
+        <PushNotificationsBanner>
+          <NotificationCenter />
+        </PushNotificationsBanner>
       </div>
 
       <div className={classnames(css.element, css.connectWallet)}>

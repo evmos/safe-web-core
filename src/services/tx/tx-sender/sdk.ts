@@ -3,7 +3,7 @@ import type Safe from '@safe-global/safe-core-sdk'
 import EthersAdapter from '@safe-global/safe-ethers-lib'
 import { ethers } from 'ethers'
 import { isWalletRejection, isHardwareWallet } from '@/utils/wallets'
-import type { SafeTransaction } from '@safe-global/safe-core-sdk-types'
+import { OperationType, type SafeTransaction } from '@safe-global/safe-core-sdk-types'
 import type { SafeInfo } from '@safe-global/safe-gateway-typescript-sdk'
 import { SAFE_FEATURES } from '@safe-global/safe-core-sdk-utils'
 import { hasSafeFeature } from '@/utils/safe-versions'
@@ -13,6 +13,7 @@ import { connectWallet, getConnectedWallet } from '@/hooks/wallets/useOnboard'
 import { type OnboardAPI } from '@web3-onboard/core'
 import type { ConnectedWallet } from '@/services/onboard'
 import type { JsonRpcSigner } from '@ethersproject/providers'
+import { asError } from '@/services/exceptions/utils'
 
 export const getAndValidateSafeSDK = (): Safe => {
   const safeSDK = getSafeSDK()
@@ -146,7 +147,7 @@ export const tryOffChainTxSigning = async (
     } catch (error) {
       const isLastSigningMethod = i === signingMethods.length - 1
 
-      if (isWalletRejection(error as Error) || isLastSigningMethod) {
+      if (isWalletRejection(asError(error)) || isLastSigningMethod) {
         throw error
       }
     }
@@ -154,4 +155,8 @@ export const tryOffChainTxSigning = async (
 
   // Won't be reached, but TS otherwise complains
   throw new Error('No supported signing methods')
+}
+
+export const isDelegateCall = (safeTx: SafeTransaction): boolean => {
+  return safeTx.data.operation === OperationType.DelegateCall
 }
