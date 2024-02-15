@@ -1,7 +1,7 @@
 import { Button, Chip, Grid, SvgIcon, Typography, IconButton } from '@mui/material'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 
 import { CustomTooltip } from '@/components/common/CustomTooltip'
@@ -26,10 +26,12 @@ import type { AddedSafesOnChain } from '@/store/addedSafesSlice'
 import type { PushNotificationPreferences } from '@/services/push-notifications/preferences'
 import type { NotifiableSafes } from '../logic'
 import useWallet from '@/hooks/wallets/useWallet'
-
+import CircularProgress from '@mui/material/CircularProgress'
+import useDebounce from '@/hooks/useDebounce'
 import css from './styles.module.css'
 
 const DISMISS_PUSH_NOTIFICATIONS_KEY = 'dismissPushNotifications'
+const BANNER_DELAY = 3000
 
 export const useDismissPushNotificationsBanner = () => {
   const addedSafes = useAppSelector(selectAllAddedSafes)
@@ -103,6 +105,7 @@ const TrackBanner = (): null => {
 }
 
 export const PushNotificationsBanner = ({ children }: { children: ReactElement }): ReactElement => {
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const isNotificationFeatureEnabled = useHasFeature(FEATURES.PUSH_NOTIFICATIONS)
   const chain = useCurrentChain()
   const totalAddedSafes = useAppSelector(selectTotalAdded)
@@ -117,8 +120,10 @@ export const PushNotificationsBanner = ({ children }: { children: ReactElement }
 
   const isSafeAdded = !!addedSafesOnChain?.[safeAddress]
   const isSafeRegistered = getPreferences(safe.chainId, safeAddress)
-  const shouldShowBanner =
-    isNotificationFeatureEnabled && !isPushNotificationBannerDismissed && isSafeAdded && !isSafeRegistered && !!wallet
+  const shouldShowBanner = useDebounce(
+    isNotificationFeatureEnabled && !isPushNotificationBannerDismissed && isSafeAdded && !isSafeRegistered && !!wallet,
+    BANNER_DELAY,
+  )
 
   const { registerNotifications } = useNotificationRegistrations()
 
@@ -136,6 +141,8 @@ export const PushNotificationsBanner = ({ children }: { children: ReactElement }
       return
     }
 
+    setIsSubmitting(true)
+
     trackEvent(PUSH_NOTIFICATION_EVENTS.ENABLE_ALL)
 
     const allPreferences = getAllPreferences()
@@ -144,11 +151,13 @@ export const PushNotificationsBanner = ({ children }: { children: ReactElement }
     try {
       await assertWalletChain(onboard, safe.chainId)
     } catch {
+      setIsSubmitting(false)
       return
     }
 
     await registerNotifications(safesToRegister)
 
+    setIsSubmitting(false)
     dismissBanner()
   }
 
@@ -158,7 +167,7 @@ export const PushNotificationsBanner = ({ children }: { children: ReactElement }
     dismissBanner()
   }
 
-  if (!shouldShowBanner) {
+  if (!shouldShowBanner || isPushNotificationBannerDismissed) {
     return children
   }
 
@@ -195,7 +204,8 @@ export const PushNotificationsBanner = ({ children }: { children: ReactElement }
                         size="small"
                         className={css.button}
                         onClick={onEnableAll}
-                        disabled={!isOk || !onboard}
+                        startIcon={isSubmitting ? <CircularProgress size={12} color="inherit" /> : null}
+                        disabled={!isOk || !onboard || isSubmitting}
                       >
                         Enable all
                       </Button>

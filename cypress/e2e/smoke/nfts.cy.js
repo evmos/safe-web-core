@@ -2,50 +2,35 @@ import * as constants from '../../support/constants'
 import * as main from '../pages/main.page'
 import * as nfts from '../pages/nfts.pages'
 
-const nftsName = 'BillyNFT721'
-const nftsAddress = '0x0000...816D'
-const nftsTokenID = 'Kitaro World #261'
-const nftsLink = 'https://testnets.opensea.io/assets/0x000000000faE8c6069596c9C805A1975C657816D/443'
+const nftsName = 'CatFactory'
+const nftsAddress = '0x373B...866c'
+const nftsTokenID = 'CF'
 
-describe('Assets > NFTs', () => {
-  before(() => {
+describe('[SMOKE] NFTs tests', () => {
+  beforeEach(() => {
     cy.clearLocalStorage()
-    cy.visit(constants.balanceNftsUrl + constants.GOERLI_TEST_SAFE)
+    cy.visit(constants.balanceNftsUrl + constants.SEPOLIA_TEST_SAFE_5)
     main.acceptCookies()
-    cy.contains(constants.goerlyE2EWallet)
+    nfts.waitForNftItems(2)
   })
 
-  describe('should have NFTs', () => {
-    it('should have NFTs in the table', () => {
-      nfts.verifyNFTNumber(5)
-    })
+  it('[SMOKE] Verify that NFTs exist in the table', () => {
+    nfts.verifyNFTNumber(10)
+  })
 
-    it('should have info in the NFT row', () => {
-      nfts.verifyDataInTable(nftsName, nftsAddress, nftsTokenID, nftsLink)
-    })
+  it('[SMOKE] Verify NFT row contains data', () => {
+    nfts.verifyDataInTable(nftsName, nftsAddress, nftsTokenID)
+  })
 
-    it('should open an NFT preview', () => {
-      nfts.openFirstNFT()
-      nfts.verifyNameInNFTModal(nftsTokenID)
-      nfts.preventBaseMainnetGoerliFromBeingSelected()
-      nfts.verifyNFTModalLink(nftsLink)
-      nfts.closeNFTModal()
-    })
+  it('[SMOKE] Verify NFT preview window can be opened', () => {
+    nfts.openActiveNFT(0)
+    nfts.verifyNameInNFTModal(nftsTokenID)
+    nfts.verifySelectedNetwrokSepolia()
+    nfts.closeNFTModal()
+  })
 
-    it('should not open an NFT preview for NFTs without one', () => {
-      nfts.clickOnThirdNFT()
-      nfts.verifyNFTModalDoesNotExist()
-    })
-
-    it('should select and send multiple NFTs', () => {
-      nfts.verifyInitialNFTData()
-      nfts.selectNFTs(3)
-      nfts.deselectNFTs([2], 3)
-      nfts.sendNFT(2)
-      nfts.verifyNFTModalData()
-      nfts.typeRecipientAddress(constants.GOERLI_TEST_SAFE)
-      nfts.clikOnNextBtn()
-      nfts.verifyReviewModalData(2)
-    })
+  it('[SMOKE] Verify NFT open does not open if no NFT exits', () => {
+    nfts.clickOnInactiveNFT()
+    nfts.verifyNFTModalDoesNotExist()
   })
 })

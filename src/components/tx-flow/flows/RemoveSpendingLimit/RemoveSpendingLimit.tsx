@@ -14,6 +14,10 @@ import { safeFormatUnits } from '@/utils/formatters'
 import SpendingLimitLabel from '@/components/common/SpendingLimitLabel'
 import { createTx } from '@/services/tx/tx-sender'
 
+const onFormSubmit = () => {
+  trackEvent(SETTINGS_EVENTS.SPENDING_LIMIT.LIMIT_REMOVED)
+}
+
 export const RemoveSpendingLimit = ({ params }: { params: SpendingLimitState }) => {
   const { setSafeTx, setSafeTxError } = useContext(SafeTxContext)
   const chainId = useChainId()
@@ -41,10 +45,6 @@ export const RemoveSpendingLimit = ({ params }: { params: SpendingLimitState }) 
 
     createTx(txParams).then(setSafeTx).catch(setSafeTxError)
   }, [chainId, params.beneficiary, params.token, setSafeTx, setSafeTxError])
-
-  const onFormSubmit = () => {
-    trackEvent(SETTINGS_EVENTS.SPENDING_LIMIT.LIMIT_REMOVED)
-  }
 
   return (
     <SignOrExecuteForm onSubmit={onFormSubmit}>

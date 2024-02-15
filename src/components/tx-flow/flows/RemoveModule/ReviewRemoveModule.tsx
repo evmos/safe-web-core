@@ -8,6 +8,10 @@ import { SafeTxContext } from '@/components/tx-flow/SafeTxProvider'
 import { type RemoveModuleFlowProps } from '.'
 import EthHashInfo from '@/components/common/EthHashInfo'
 
+const onFormSubmit = () => {
+  trackEvent(SETTINGS_EVENTS.MODULES.REMOVE_MODULE)
+}
+
 export const ReviewRemoveModule = ({ params }: { params: RemoveModuleFlowProps }) => {
   const { setSafeTx, safeTxError, setSafeTxError } = useContext(SafeTxContext)
 
@@ -20,10 +24,6 @@ export const ReviewRemoveModule = ({ params }: { params: RemoveModuleFlowProps }
       logError(Errors._806, safeTxError.message)
     }
   }, [safeTxError])
-
-  const onFormSubmit = () => {
-    trackEvent(SETTINGS_EVENTS.MODULES.REMOVE_MODULE)
-  }
 
   return (
     <SignOrExecuteForm onSubmit={onFormSubmit}>

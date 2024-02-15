@@ -6,7 +6,6 @@ import useSafeTokenAllocation, { useSafeVotingPower, type Vesting } from '@/hook
 import { OVERVIEW_EVENTS } from '@/services/analytics'
 import { formatVisualAmount } from '@/utils/formatters'
 import { Box, Button, ButtonBase, Skeleton, Tooltip, Typography } from '@mui/material'
-import { BigNumber } from 'ethers'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import type { UrlObject } from 'url'
@@ -18,7 +17,12 @@ import classnames from 'classnames'
 
 const TOKEN_DECIMALS = 18
 
-export const getSafeTokenAddress = (chainId: string): string => {
+export const useSafeTokenAddress = () => {
+  const chainId = useChainId()
+  return getSafeTokenAddress(chainId)
+}
+
+export const getSafeTokenAddress = (chainId: string): string | undefined => {
   return SAFE_TOKEN_ADDRESSES[chainId]
 }
 
@@ -56,10 +60,10 @@ const SafeTokenWidget = () => {
     : undefined
 
   const canRedeemSep5 = canRedeemSep5Airdrop(allocationData)
-  const flooredSafeBalance = formatVisualAmount(allocation || BigNumber.from(0), TOKEN_DECIMALS, 2)
+  const flooredSafeBalance = formatVisualAmount(allocation || BigInt(0), TOKEN_DECIMALS, 2)
 
   return (
-    <Box className={css.buttonContainer}>
+    <Box className={css.container}>
       <Tooltip
         title={
           url

@@ -12,7 +12,7 @@ const ExecuteCheckbox = ({ onChange }: { onChange: (checked: boolean) => void })
 
   const handleChange = (_: ChangeEvent<HTMLInputElement>, value: string) => {
     const checked = value === 'true'
-    trackEvent({ ...MODALS_EVENTS.EXECUTE_TX, label: checked })
+    trackEvent({ ...MODALS_EVENTS.TOGGLE_EXECUTE_TX, label: checked })
     dispatch(setTransactionExecution(checked))
     onChange(checked)
   }
@@ -31,8 +31,15 @@ const ExecuteCheckbox = ({ onChange }: { onChange: (checked: boolean) => void })
           }
           control={<Radio />}
           className={css.radio}
+          data-testid="execute-checkbox"
         />
-        <FormControlLabel value="false" label={<>No, later</>} control={<Radio />} className={css.radio} />
+        <FormControlLabel
+          value="false"
+          label={<>No, later</>}
+          control={<Radio />}
+          className={css.radio}
+          data-testid="sign-checkbox"
+        />
       </RadioGroup>
     </>
   )

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { formatError } from '@/utils/formatters'
 import type { LinkProps } from 'next/link'
 import { selectNotifications, showNotification } from '@/store/notificationsSlice'
@@ -14,6 +14,8 @@ import useIsSafeOwner from '@/hooks/useIsSafeOwner'
 import useWallet from './wallets/useWallet'
 import useSafeAddress from './useSafeAddress'
 import { getExplorerLink } from '@/utils/gateway'
+import { getTxDetails } from '@/services/transactions'
+import { isWalletRejection } from '@/utils/wallets'
 
 const TxNotifications = {
   [TxEvent.SIGN_FAILED]: 'Failed to sign. Please try again.',
@@ -69,15 +71,23 @@ const useTxNotifications = (): void => {
     const entries = Object.entries(TxNotifications) as [keyof typeof TxNotifications, string][]
 
     const unsubFns = entries.map(([event, baseMessage]) =>
-      txSubscribe(event, (detail) => {
+      txSubscribe(event, async (detail) => {
         const isError = 'error' in detail
+        if (isError && isWalletRejection(detail.error)) return
         const isSuccess = successEvents.includes(event)
         const message = isError ? `${baseMessage} ${formatError(detail.error)}` : baseMessage
         const txId = 'txId' in detail ? detail.txId : undefined
         const txHash = 'txHash' in detail ? detail.txHash : undefined
         const groupKey = 'groupKey' in detail && detail.groupKey ? detail.groupKey : txId || ''
-        const humanDescription =
-          'humanDescription' in detail && detail.humanDescription ? detail.humanDescription : 'Transaction'
+
+        let humanDescription = 'Transaction'
+        const id = txId || txHash
+        if (id) {
+          try {
+            const txDetails = await getTxDetails(chain.chainId, id)
+            humanDescription = txDetails.txInfo.humanDescription || humanDescription
+          } catch {}
+        }
 
         dispatch(
           showNotification({
@@ -110,6 +120,7 @@ const useTxNotifications = (): void => {
   const pendingTxs = useAppSelector(selectPendingTxs)
   const notifications = useAppSelector(selectNotifications)
   const wallet = useWallet()
+  const notifiedAwaitingTxIds = useRef<Array<string>>([])
 
   const txsAwaitingConfirmation = useMemo(() => {
     if (!page?.results) {
@@ -130,18 +141,22 @@ const useTxNotifications = (): void => {
     }
 
     const txId = txsAwaitingConfirmation[0].transaction.id
-    const hasNotified = notifications.some(({ groupKey }) => groupKey === txId)
+    const hasNotified = notifiedAwaitingTxIds.current.includes(txId)
 
-    if (!hasNotified) {
-      dispatch(
-        showNotification({
-          variant: 'info',
-          message: 'A transaction requires your confirmation.',
-          link: chain && getTxLink(txId, chain, safeAddress),
-          groupKey: txId,
-        }),
-      )
+    if (hasNotified) {
+      return
     }
+
+    dispatch(
+      showNotification({
+        variant: 'info',
+        message: 'A transaction requires your confirmation.',
+        link: chain && getTxLink(txId, chain, safeAddress),
+        groupKey: txId,
+      }),
+    )
+
+    notifiedAwaitingTxIds.current.push(txId)
   }, [chain, dispatch, isOwner, notifications, safeAddress, txsAwaitingConfirmation])
 }
 

@@ -8,13 +8,14 @@ import NameInput from '@/components/common/NameInput'
 import useChainId from '@/hooks/useChainId'
 import { useAppDispatch } from '@/store'
 import { upsertAddressBookEntry } from '@/store/addressBookSlice'
+import madProps from '@/utils/mad-props'
 
 export type AddressEntry = {
   name: string
   address: string
 }
 
-const EntryDialog = ({
+function EntryDialog({
   handleClose,
   defaultValues = {
     name: '',
@@ -22,14 +23,15 @@ const EntryDialog = ({
   },
   disableAddressInput = false,
   chainId,
+  currentChainId,
 }: {
   handleClose: () => void
   defaultValues?: AddressEntry
   disableAddressInput?: boolean
   chainId?: string
-}): ReactElement => {
+  currentChainId: string
+}): ReactElement {
   const dispatch = useAppDispatch()
-  const currentChainId = useChainId()
 
   const methods = useForm<AddressEntry>({
     defaultValues,
@@ -54,7 +56,7 @@ const EntryDialog = ({
         <form onSubmit={onSubmit}>
           <DialogContent>
             <Box mb={2}>
-              <NameInput label="Name" autoFocus name="name" required />
+              <NameInput data-testid="name-input" label="Name" autoFocus name="name" required />
             </Box>
 
             <Box>
@@ -70,8 +72,16 @@ const EntryDialog = ({
           </DialogContent>
 
           <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button type="submit" variant="contained" disabled={!formState.isValid} disableElevation>
+            <Button data-testid="cancel-btn" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              data-testid="save-btn"
+              type="submit"
+              variant="contained"
+              disabled={!formState.isValid}
+              disableElevation
+            >
               Save
             </Button>
           </DialogActions>
@@ -81,4 +91,6 @@ const EntryDialog = ({
   )
 }
 
-export default EntryDialog
+export default madProps(EntryDialog, {
+  currentChainId: useChainId,
+})

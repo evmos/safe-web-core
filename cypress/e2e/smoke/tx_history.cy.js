@@ -1,119 +1,87 @@
 import * as constants from '../../support/constants'
 import * as main from '../pages/main.page'
 import * as createTx from '../pages/create_tx.pages'
+import * as data from '../../fixtures/txhistory_data_data.json'
 
-const INCOMING = 'Received'
-const OUTGOING = 'Sent'
-const CONTRACT_INTERACTION = 'Contract interaction'
+const typeOnchainRejection = data.type.onchainRejection
+const typeBatch = data.type.batchNativeTransfer
+const typeReceive = data.type.receive
+const typeSend = data.type.send
+const typeDeleteAllowance = data.type.deleteSpendingLimit
+const typeGeneral = data.type.general
+const typeUntrustedToken = data.type.untrustedReceivedToken
 
-const str1 = 'True'
-const str2 = '1337'
-const str3 = '5688'
-
-describe('Transaction history', () => {
-  before(() => {
+describe('[SMOKE] Tx history tests', () => {
+  beforeEach(() => {
     cy.clearLocalStorage()
-    // Go to the test Safe transaction history
-    cy.visit(constants.transactionsHistoryUrl + constants.GOERLI_TEST_SAFE)
+    cy.visit(constants.transactionsHistoryUrl + constants.SEPOLIA_TEST_SAFE_8)
     main.acceptCookies()
   })
 
-  it('should display October 9th transactions', () => {
-    const DATE = 'Oct 9, 2022'
-    const NEXT_DATE_LABEL = 'Feb 8, 2022'
-    const amount = '0.25 GOR'
-    const amount2 = '0.11 WETH'
-    const amount3 = '120,497.61 DAI'
-    const time = '4:56 PM'
-    const time2 = '4:59 PM'
-    const time3 = '5:00 PM'
-    const time4 = '5:01 PM'
-    const success = 'Success'
-
-    createTx.verifyDateExists(DATE)
-    createTx.verifyDateExists(NEXT_DATE_LABEL)
-
-    // Transaction summaries from October 9th
-    const rows = cy.contains('div', DATE).nextUntil(`div:contains(${NEXT_DATE_LABEL})`)
-
-    rows.should('have.length', 19)
-
-    rows
-      // Receive 0.25 GOR
-      .last()
-      .within(() => {
-        // Type
-        createTx.verifyImageAltTxt(0, INCOMING)
-        createTx.verifyStatus(constants.transactionStatus.received)
-
-        // Info
-        createTx.verifyImageAltTxt(1, constants.tokenAbbreviation.gor)
-        createTx.verifyTransactionStrExists(amount)
-        createTx.verifyTransactionStrExists(time)
-        createTx.verifyTransactionStrExists(success)
-      })
-      // CowSwap deposit of Wrapped Ether
-      .prev()
-      .within(() => {
-        createTx.verifyTransactionStrExists('0')
-        // TODO: update next line after fixing the logo
-        // cy.find('img').should('have.attr', 'src').should('include', WRAPPED_ETH)
-        createTx.verifyTransactionStrExists(constants.tokenNames.wrappedEther)
-        createTx.verifyTransactionStrExists(constants.transactionStatus.deposit)
-        createTx.verifyTransactionStrExists(time2)
-        createTx.verifyTransactionStrExists(constants.transactionStatus.success)
-      })
-      // CowSwap approval of Wrapped Ether
-      .prev()
-      .within(() => {
-        createTx.verifyTransactionStrExists('1')
-        // Type
-        // TODO: update next line after fixing the logo
-        // cy.find('img').should('have.attr', 'src').should('include', WRAPPED_ETH)
-        createTx.verifyTransactionStrExists(constants.transactionStatus.approve)
-        createTx.verifyTransactionStrExists(time3)
-        createTx.verifyTransactionStrExists(constants.transactionStatus.success)
-      })
-      // Contract interaction
-      .prev()
-      .within(() => {
-        createTx.verifyTransactionStrExists('2')
-        createTx.verifyTransactionStrExists(constants.transactionStatus.interaction)
-        createTx.verifyTransactionStrExists(time4)
-        createTx.verifyTransactionStrExists(constants.transactionStatus.success)
-      })
-      // Send 0.11 WETH
-      .prev()
-      .within(() => {
-        createTx.verifyImageAltTxt(0, OUTGOING)
-        createTx.verifyTransactionStrExists(constants.transactionStatus.sent)
-        createTx.verifyTransactionStrExists(amount2)
-        createTx.verifyTransactionStrExists(time4)
-        createTx.verifyTransactionStrExists(constants.transactionStatus.success)
-      })
-      // Receive 120 DAI
-      .prev()
-      .within(() => {
-        createTx.verifyTransactionStrExists(constants.transactionStatus.received)
-        createTx.verifyTransactionStrExists(amount3)
-        createTx.verifyTransactionStrExists(time4)
-        createTx.verifyTransactionStrExists(constants.transactionStatus.success)
-      })
+  // Token receipt
+  it('[SMOKE] Verify summary for token receipt', () => {
+    createTx.verifySummaryByName(
+      typeReceive.summaryTitle,
+      typeReceive.summaryTxInfo,
+      [typeReceive.summaryTxInfo, typeGeneral.statusOk],
+      typeReceive.altTmage,
+    )
   })
 
-  it('should expand/collapse all actions', () => {
-    createTx.clickOnTransactionExpandableItem('Mar 24, 2023', () => {
-      createTx.verifyTransactionStrNotVible(str1)
-      createTx.verifyTransactionStrNotVible(str2)
-      createTx.verifyTransactionStrNotVible(str3)
-      createTx.clickOnExpandAllBtn()
-      createTx.verifyTransactionStrExists(str1)
-      createTx.verifyTransactionStrExists(str2)
-      createTx.verifyTransactionStrExists(str3)
-      createTx.clickOnCollapseAllBtn()
-      createTx.verifyTransactionStrNotVible(str1)
-      createTx.verifyTransactionStrNotVible(str2)
-      createTx.verifyTransactionStrNotVible(str3)
-    })
+  it('[SMOKE] Verify exapanded details for token receipt', () => {
+    createTx.clickOnTransactionItemByName(typeReceive.summaryTitle, typeReceive.summaryTxInfo)
+    createTx.verifyExpandedDetails([
+      typeReceive.title,
+      typeReceive.receivedFrom,
+      typeReceive.senderAddress,
+      typeReceive.transactionHash,
+    ])
+  })
+
+  it('[SMOKE] Verify summary for token send', () => {
+    createTx.verifySummaryByName(
+      typeSend.title,
+      [typeSend.summaryTxInfo, typeGeneral.statusOk],
+      typeSend.altImage,
+      typeSend.altToken,
+    )
+  })
+
+  it('[SMOKE] Verify summary for on-chain rejection', () => {
+    createTx.verifySummaryByName(typeOnchainRejection.title, [typeGeneral.statusOk], typeOnchainRejection.altImage)
+  })
+
+  it('[SMOKE] Verify summary for batch', () => {
+    createTx.verifySummaryByName(
+      typeBatch.title,
+      typeBatch.summaryTxInfo,
+      [typeBatch.summaryTxInfo, typeGeneral.statusOk],
+      typeBatch.altImage,
+    )
+  })
+
+  it('[SMOKE] Verify summary for allowance deletion', () => {
+    createTx.verifySummaryByName(
+      typeDeleteAllowance.title,
+      typeDeleteAllowance.summaryTxInfo,
+      [typeDeleteAllowance.summaryTxInfo, typeGeneral.statusOk],
+      typeDeleteAllowance.altImage,
+    )
+  })
+
+  it('[SMOKE] Verify summary for untrusted token', () => {
+    createTx.verifySummaryByName(
+      typeUntrustedToken.summaryTitle,
+      typeUntrustedToken.summaryTxInfo,
+      [typeUntrustedToken.summaryTxInfo, typeGeneral.statusOk],
+      typeUntrustedToken.altImage,
+    )
+    createTx.verifySpamIconIsDisplayed(typeUntrustedToken.title, typeUntrustedToken.summaryTxInfo)
+  })
+
+  it('[SMOKE] Verify that copying sender address of untrusted token shows warning popup', () => {
+    createTx.clickOnTransactionItemByName(typeUntrustedToken.summaryTitle, typeUntrustedToken.summaryTxInfo)
+    createTx.clickOnCopyBtn(0)
+    createTx.verifyWarningModalVisible()
   })
 })

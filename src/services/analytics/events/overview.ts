@@ -96,4 +96,26 @@ export const OVERVIEW_EVENTS = {
     action: 'Click on SEP5 allocation button',
     category: OVERVIEW_CATEGORY,
   },
+  // Track clicks on links to Safe Accounts
+  OPEN_SAFE: {
+    action: 'Open Safe',
+    category: OVERVIEW_CATEGORY,
+    //label: OPEN_SAFE_LABELS
+  },
+  // Track actual Safe views
+  SAFE_VIEWED: {
+    event: EventType.SAFE_OPENED,
+    action: 'Safe viewed',
+    category: OVERVIEW_CATEGORY,
+  },
+  BUY_CRYPTO_BUTTON: {
+    action: 'Buy crypto button',
+    category: OVERVIEW_CATEGORY,
+  },
+}
+
+export enum OPEN_SAFE_LABELS {
+  sidebar = 'sidebar',
+  after_create = 'after_create',
+  after_add = 'after_add',
 }

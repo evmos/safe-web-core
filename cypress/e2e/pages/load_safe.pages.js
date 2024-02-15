@@ -1,22 +1,30 @@
 import * as constants from '../../support/constants'
 
-const addExistingAccountBtnStr = 'Add existing Account'
+const addExistingAccountBtnStr = 'Add existing one'
 const contactStr = 'Name, address & network'
-const invalidAddressFormatErrorMsg = 'Invalid address format'
+export const invalidAddressFormatErrorMsg = 'Invalid address format'
+const invalidAddressNameLengthErrorMsg = 'Maximum 50 symbols'
 
 const safeDataForm = '[data-testid=load-safe-form]'
 const nameInput = 'input[name="name"]'
 const addressInput = 'input[name="address"]'
-const sideBarIcon = '[data-testid=ChevronRightIcon]'
-const sidebarCheckIcon = '[data-testid=CheckIcon]'
+const sideBarIcon = '[data-testid="ChevronRightIcon"]'
+const sidebarCheckIcon = '[data-testid="CheckIcon"]'
+const addressStepNextBtn = '[data-testid="load-safe-next-btn"]'
+const typeFile = '[type="file"]'
 const nextBtnStr = 'Next'
 const addBtnStr = 'Add'
 const settingsBtnStr = 'Settings'
 const ownersConfirmationsStr = 'Owners and confirmations'
 const transactionStr = 'Transactions'
+const qrErrorMsg = 'The QR could not be read'
+
+export function verifyQRCodeErrorMsg() {
+  cy.contains(qrErrorMsg).should('be.visible')
+}
 
 export function openLoadSafeForm() {
-  cy.contains('button', addExistingAccountBtnStr).click()
+  cy.contains('a', addExistingAccountBtnStr).click()
   cy.contains(contactStr)
 }
 
@@ -29,15 +37,20 @@ export function selectGoerli() {
   cy.contains('span', constants.networks.goerli)
 }
 
+export function selectSepolia() {
+  cy.get('ul li').contains(constants.networks.sepolia).click()
+  cy.contains('span', constants.networks.sepolia)
+}
+
 export function selectPolygon() {
   cy.get('ul li').contains(constants.networks.polygon).click()
   cy.contains('span', constants.networks.polygon)
 }
 
-export function verifyNameInputHasPlceholder() {
-  cy.get(nameInput).should('have.attr', 'placeholder').should('match', constants.goerlySafeName)
+export function inputNameAndAddress(name, address) {
+  inputName(name)
+  inputAddress(address)
 }
-
 export function inputName(name) {
   cy.get(nameInput).type(name).should('have.value', name)
 }
@@ -47,14 +60,18 @@ export function verifyIncorrectAddressErrorMessage() {
   cy.get(addressInput).parent().prev('label').contains(invalidAddressFormatErrorMsg)
 }
 
+export function verifyNameLengthErrorMessage() {
+  cy.get(nameInput).parent().prev('label').contains(invalidAddressNameLengthErrorMsg)
+}
+
 export function inputAddress(address) {
   cy.get(addressInput).clear().type(address)
 }
 
-export function verifyAddressInputValue() {
+export function verifyAddressInputValue(safeAddress) {
   // The address field should be filled with the "bare" QR code's address
-  const [, address] = constants.GOERLI_TEST_SAFE.split(':')
-  cy.get('input[name="address"]').should('have.value', address)
+  const [, address] = safeAddress.split(':')
+  cy.get(addressInput).should('have.value', address)
 }
 
 export function clickOnNextBtn() {
@@ -113,4 +130,8 @@ export function verifyTransactionSectionIsVisible() {
 
 export function verifyNumberOfTransactions(startNumber, endNumber) {
   cy.get(`span:contains("${startNumber} out of ${endNumber}")`).should('have.length', 1)
+}
+
+export function verifyNextButtonStatus(param) {
+  cy.get(addressStepNextBtn).should(param)
 }

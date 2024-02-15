@@ -6,7 +6,7 @@ let $dapps = []
 const app1 = 'https://app1.com'
 const app3 = 'https://app3.com'
 
-describe('The Safe Apps permissions settings section', () => {
+describe('Permissions settings tests', () => {
   before(() => {
     cy.clearLocalStorage()
     cy.on('window:before:load', (window) => {
@@ -45,22 +45,25 @@ describe('The Safe Apps permissions settings section', () => {
       )
     })
 
-    cy.visit(constants.TEST_SAFE_2 + constants.appSettingsUrl, { failOnStatusCode: false })
+    cy.visit(`${constants.appSettingsUrl}?safe=${constants.SEPOLIA_TEST_SAFE_5}`, {
+      failOnStatusCode: false,
+    })
+
     main.acceptCookies()
   })
 
-  it('should show the permissions configuration for each stored app', () => {
+  it('Verify for each stored app the permissions configuration is shown', () => {
     cy.findAllByRole('heading', { level: 5 }).should('have.length', 4)
   })
 
-  describe('For each app', () => {
+  describe('Permissions for each Safe app', () => {
     before(() => {
       cy.get(safeapps.gridItem).then((items) => {
         $dapps = items
       })
     })
 
-    it('app1 should have camera, full screen and geo permissions', () => {
+    it('Verify that app1 has camera, full screen and geo permissions', () => {
       const app1Data = [
         'app1',
         safeapps.permissionCheckboxNames.camera,
@@ -74,7 +77,7 @@ describe('The Safe Apps permissions settings section', () => {
       main.verifyCheckboxeState(safeapps.permissionCheckboxes.fullscreen, 0, constants.checkboxStates.checked)
     })
 
-    it('app2 should have address book and microphone permissions', () => {
+    it('Verify that app2 has address book and microphone permissions', () => {
       const app2Data = [
         'app2',
         safeapps.permissionCheckboxNames.addressbook,
@@ -86,21 +89,21 @@ describe('The Safe Apps permissions settings section', () => {
       main.verifyCheckboxeState(safeapps.permissionCheckboxes.addressbook, 0, constants.checkboxStates.checked)
     })
 
-    it('app3 should have camera permissions', () => {
+    it('Verify that app3 has camera permissions', () => {
       const app3Data = ['app3', safeapps.permissionCheckboxNames.camera]
 
       main.checkTextsExistWithinElement($dapps[2], app3Data)
       main.verifyCheckboxeState(safeapps.permissionCheckboxes.camera, 1, constants.checkboxStates.unchecked)
     })
 
-    it('app4 should have address book permissions', () => {
+    it('Verify that app4 has address book permissions', () => {
       const app4Data = ['app4', safeapps.permissionCheckboxNames.addressbook]
 
       main.checkTextsExistWithinElement($dapps[3], app4Data)
       main.verifyCheckboxeState(safeapps.permissionCheckboxes.addressbook, 1, constants.checkboxStates.checked)
     })
 
-    it('should allow to allow all or clear all the checkboxes at once', () => {
+    it('Verify Allow all or Clear all the checkboxes at once is permitted', () => {
       safeapps.uncheckAllPermissions($dapps[1])
       main.verifyCheckboxeState(safeapps.permissionCheckboxes.addressbook, 0, constants.checkboxStates.unchecked)
       main.verifyCheckboxeState(safeapps.permissionCheckboxes.microphone, 0, constants.checkboxStates.unchecked)
@@ -110,7 +113,7 @@ describe('The Safe Apps permissions settings section', () => {
       main.verifyCheckboxeState(safeapps.permissionCheckboxes.microphone, 0, constants.checkboxStates.checked)
     })
 
-    it('should allow to remove apps and reflect it in the localStorage', () => {
+    it('Verify it is permitted to remove apps and reflect it in the localStorage', () => {
       cy.wrap($dapps[0]).find('svg').last().click()
       cy.wrap($dapps[2])
         .find('svg')

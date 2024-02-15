@@ -82,7 +82,7 @@ const SafeList = ({ closeDrawer }: { closeDrawer?: () => void }): ReactElement =
 
   const hasWallet = !!wallet
   const hasNoSafes = Object.keys(ownedSafes).length === 0 && Object.keys(addedSafes).length === 0
-  const isWelcomePage = router.pathname === AppRoutes.welcome
+  const isWelcomePage = router.pathname === AppRoutes.welcome.index || router.pathname === AppRoutes.welcome.socialLogin
   const isSingleTxPage = router.pathname === AppRoutes.transactions.tx
 
   /**
@@ -101,7 +101,7 @@ const SafeList = ({ closeDrawer }: { closeDrawer?: () => void }): ReactElement =
   )
 
   return (
-    <div>
+    <div data-testid="sidebar-safe-container">
       <div className={css.header}>
         <Typography variant="h4" display="inline" fontWeight={700}>
           My Safe Accounts
@@ -110,7 +110,7 @@ const SafeList = ({ closeDrawer }: { closeDrawer?: () => void }): ReactElement =
         {!isWelcomePage && (
           <Track {...OVERVIEW_EVENTS.ADD_SAFE}>
             <Link
-              href={{ pathname: AppRoutes.welcome, query: { chain: currentChain?.shortName } }}
+              href={{ pathname: AppRoutes.welcome.index, query: { chain: currentChain?.shortName } }}
               passHref
               legacyBehavior
             >
@@ -136,7 +136,7 @@ const SafeList = ({ closeDrawer }: { closeDrawer?: () => void }): ReactElement =
 
               <Typography variant="body2" color="primary.light" textAlign="center" mt={3}>
                 {!isWelcomePage ? (
-                  <Link href={{ pathname: AppRoutes.welcome, query: router.query }} passHref legacyBehavior>
+                  <Link href={{ pathname: AppRoutes.welcome.index, query: router.query }} passHref legacyBehavior>
                     <MuiLink onClick={closeDrawer}>{NO_SAFE_MESSAGE}</MuiLink>
                   </Link>
                 ) : (
@@ -148,7 +148,7 @@ const SafeList = ({ closeDrawer }: { closeDrawer?: () => void }): ReactElement =
           ) : (
             <Box display="flex" flexDirection="column" alignItems="center" gap={3} maxWidth={250}>
               <Box display="flex" alignItems="center" justifyContent="center">
-                <KeyholeIcon />
+                <KeyholeIcon size={40} />
               </Box>
 
               <Typography variant="body2" color="primary.light" textAlign="center" sx={{ textWrap: 'balance' }}>
@@ -187,13 +187,13 @@ const SafeList = ({ closeDrawer }: { closeDrawer?: () => void }): ReactElement =
           return (
             <Fragment key={chain.chainName}>
               {/* Chain indicator */}
-              <ChainIndicator chainId={chain.chainId} className={css.chainDivider} />
+              <ChainIndicator chainId={chain.chainId} className={css.chainDivider} showLogo={false} />
 
               {/* No Safes yet */}
               {!addedSafeEntriesOnChain.length && !ownedSafesOnChain.length && (
                 <Typography variant="body2" color="primary.light" p={2} textAlign="center">
                   {!isWelcomePage ? (
-                    <Link href={{ pathname: AppRoutes.welcome, query: router.query }} passHref legacyBehavior>
+                    <Link href={{ pathname: AppRoutes.welcome.index, query: router.query }} passHref legacyBehavior>
                       <MuiLink onClick={closeDrawer}>{NO_SAFE_MESSAGE}</MuiLink>
                     </Link>
                   ) : (

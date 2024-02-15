@@ -10,7 +10,7 @@ import SidebarFooter from '@/components/sidebar/SidebarFooter'
 
 import css from './styles.module.css'
 import { trackEvent, OVERVIEW_EVENTS } from '@/services/analytics'
-import { DataWidget } from '@/components/welcome/DataWidget'
+import { DataWidget } from '@/components/welcome/SafeListDrawer/DataWidget'
 
 const Sidebar = (): ReactElement => {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false)
@@ -26,12 +26,12 @@ const Sidebar = (): ReactElement => {
   const closeDrawer = useCallback(() => setIsDrawerOpen(false), [])
 
   return (
-    <div className={css.container}>
+    <div data-testid="sidebar-container" className={css.container}>
       <div className={css.scroll}>
-        <ChainIndicator />
+        <ChainIndicator showLogo={false} />
 
         {/* Open the safes list */}
-        <IconButton className={css.drawerButton} onClick={onDrawerToggle}>
+        <IconButton data-testid="open-safes-icon" className={css.drawerButton} onClick={onDrawerToggle}>
           <ChevronRight />
         </IconButton>
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { SafeMessageStatus } from '@safe-global/safe-gateway-typescript-sdk'
 import type { SafeMessageListItem } from '@safe-global/safe-gateway-typescript-sdk'
 
@@ -15,6 +15,7 @@ import useWallet from '@/hooks/wallets/useWallet'
 import { useCurrentChain } from '@/hooks/useChains'
 import useSafeAddress from '@/hooks/useSafeAddress'
 import type { PendingSafeMessagesState } from '@/store/pendingSafeMessagesSlice'
+import { isWalletRejection } from '@/utils/wallets'
 
 const SafeMessageNotifications: Partial<Record<SafeMsgEvent, string>> = {
   [SafeMsgEvent.PROPOSE]: 'You successfully signed the message.',
@@ -50,6 +51,7 @@ const useSafeMessageNotifications = () => {
     const unsubFns = entries.map(([event, baseMessage]) =>
       safeMsgSubscribe(event, (detail) => {
         const isError = 'error' in detail
+        if (isError && isWalletRejection(detail.error)) return
         const isSuccess = event === SafeMsgEvent.PROPOSE || event === SafeMsgEvent.SIGNATURE_PREPARED
         const message = isError ? `${baseMessage}${formatError(detail.error)}` : baseMessage
 
@@ -80,6 +82,7 @@ const useSafeMessageNotifications = () => {
   const notifications = useAppSelector(selectNotifications)
   const chain = useCurrentChain()
   const safeAddress = useSafeAddress()
+  const notifiedAwaitingMessageHashes = useRef<Array<string>>([])
 
   const msgsNeedingConfirmation = useMemo(() => {
     if (!page?.results) {
@@ -95,21 +98,25 @@ const useSafeMessageNotifications = () => {
     }
 
     const messageHash = msgsNeedingConfirmation[0].messageHash
-    const hasNotified = notifications.some(({ groupKey }) => groupKey === messageHash)
+    const hasNotified = notifiedAwaitingMessageHashes.current.includes(messageHash)
 
-    if (!hasNotified) {
-      dispatch(
-        showNotification({
-          variant: 'info',
-          message: 'A message requires your confirmation.',
-          link: {
-            href: `${AppRoutes.transactions.messages}?safe=${chain?.shortName}:${safeAddress}`,
-            title: 'View messages',
-          },
-          groupKey: messageHash,
-        }),
-      )
+    if (hasNotified) {
+      return
     }
+
+    dispatch(
+      showNotification({
+        variant: 'info',
+        message: 'A message requires your confirmation.',
+        link: {
+          href: `${AppRoutes.transactions.messages}?safe=${chain?.shortName}:${safeAddress}`,
+          title: 'View messages',
+        },
+        groupKey: messageHash,
+      }),
+    )
+
+    notifiedAwaitingMessageHashes.current.push(messageHash)
   }, [dispatch, isOwner, notifications, msgsNeedingConfirmation, chain?.shortName, safeAddress])
 }
 

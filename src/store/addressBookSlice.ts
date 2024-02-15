@@ -1,6 +1,6 @@
 import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import { validateAddress } from '@/utils/validation'
-import { pickBy } from 'lodash'
+import pickBy from 'lodash/pickBy'
 import type { RootState } from '.'
 
 export type AddressBook = { [address: string]: string }
@@ -26,6 +26,9 @@ export const addressBookSlice = createSlice({
 
     upsertAddressBookEntry: (state, action: PayloadAction<{ chainId: string; address: string; name: string }>) => {
       const { chainId, address, name } = action.payload
+      if (name.trim() === '') {
+        return
+      }
       if (!state[chainId]) state[chainId] = {}
       state[chainId][address] = name
     },

@@ -3,7 +3,12 @@ import { EventType } from '@/services/analytics/types'
 export const CREATE_SAFE_CATEGORY = 'create-safe'
 
 export const CREATE_SAFE_EVENTS = {
-  CREATE_BUTTON: {
+  CONTINUE_TO_CREATION: {
+    action: 'Continue to creation',
+    category: CREATE_SAFE_CATEGORY,
+    event: EventType.META,
+  },
+  OPEN_SAFE_CREATION: {
     action: 'Open stepper',
     category: CREATE_SAFE_CATEGORY,
   },
@@ -37,22 +42,22 @@ export const CREATE_SAFE_EVENTS = {
     action: 'Retry Safe creation',
     category: CREATE_SAFE_CATEGORY,
   },
+  CANCEL_CREATE_SAFE_FORM: {
+    action: 'Cancel safe creation form',
+    category: CREATE_SAFE_CATEGORY,
+  },
   CANCEL_CREATE_SAFE: {
     event: EventType.META,
     action: 'Cancel Safe creation',
     category: CREATE_SAFE_CATEGORY,
   },
   CREATED_SAFE: {
-    event: EventType.META,
+    event: EventType.SAFE_CREATED,
     action: 'Created Safe',
     category: CREATE_SAFE_CATEGORY,
   },
   GET_STARTED: {
     action: 'Load Safe',
-    category: CREATE_SAFE_CATEGORY,
-  },
-  GO_TO_SAFE: {
-    action: 'Open Safe',
     category: CREATE_SAFE_CATEGORY,
   },
   OPEN_HINT: {
@@ -81,10 +86,6 @@ export const LOAD_SAFE_EVENTS = {
   THRESHOLD: {
     event: EventType.META,
     action: 'Threshold',
-    category: LOAD_SAFE_CATEGORY,
-  },
-  GO_TO_SAFE: {
-    action: 'Open Safe',
     category: LOAD_SAFE_CATEGORY,
   },
 }

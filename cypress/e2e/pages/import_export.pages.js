@@ -1,6 +1,8 @@
+import * as constants from '../../support/constants'
 import { format } from 'date-fns'
 const path = require('path')
 
+const pinnedAppsStr = 'My pinned apps'
 const enablePushNotificationsStr = 'Enable push notifications'
 const addressBookBtnStr = 'Address book'
 const dataImportModalStr = 'Data import'
@@ -11,6 +13,7 @@ const appearenceTabStr = 'Appearance'
 const showMoreTabsBtn = '[data-testid="KeyboardArrowRightIcon"]'
 const dataTabStr = 'Data'
 const tab = 'div[role="tablist"] a'
+export const safeHeaderInfo = '[data-testid="safe-header-info"]'
 export const prependChainPrefixStr = 'Prepend chain prefix to addresses'
 export const copyAddressStr = 'Copy addresses with chain prefix'
 export const darkModeStr = 'Dark mode'
@@ -24,7 +27,7 @@ export function clickOnImportBtn() {
 }
 
 export function clickOnImportBtnDataImportModal() {
-  cy.contains(dataImportModalStr).parent().contains('button', 'Import').click()
+  cy.contains('button', 'Import').click()
 }
 
 export function uploadFile(filePath) {
@@ -33,14 +36,19 @@ export function uploadFile(filePath) {
 
 export function verifyImportModalData() {
   //verifies that the modal says the amount of chains/addressbook values it uploaded for file ../fixtures/data_import.json
-  cy.contains('Added Safe Accounts on 3 chains').should('be.visible')
-  cy.contains('Address book for 3 chains').should('be.visible')
+  cy.contains('Added Safe Accounts on 4 chains').should('be.visible')
+  cy.contains('Address book for 4 chains').should('be.visible')
   cy.contains('Settings').should('be.visible')
   cy.contains('Bookmarked Safe Apps').should('be.visible')
 }
 
 export function clickOnImportedSafe(safe) {
   cy.contains(safe).click()
+  cy.get(safeHeaderInfo).contains(safe).should('exist')
+}
+
+export function clickOnOpenSafeListSidebar() {
+  cy.contains('My Safe Accounts').click()
 }
 
 export function clickOnClosePushNotificationsBanner() {
@@ -55,10 +63,8 @@ export function clickOnAddressBookBtn() {
 
 export function verifyImportedAddressBookData() {
   //Verifies imported owners in the Address book for file ../fixtures/data_import.json
-  cy.get('tbody tr:nth-child(1) td:nth-child(1)').contains('test1')
-  cy.get('tbody tr:nth-child(1) td:nth-child(2)').contains('0x61a0c717d18232711bC788F19C9Cd56a43cc8872')
-  cy.get('tbody tr:nth-child(2) td:nth-child(1)').contains('test2')
-  cy.get('tbody tr:nth-child(2) td:nth-child(2)').contains('0x7724b234c9099C205F03b458944942bcEBA13408')
+  cy.get('tbody tr:nth-child(1) td:nth-child(1)').contains(constants.SEPOLIA_CSV_ENTRY.name)
+  cy.get('tbody tr:nth-child(1) td:nth-child(2)').contains(constants.SEPOLIA_CSV_ENTRY.address.substring(4))
 }
 
 export function clickOnAppsBtn() {
@@ -79,6 +85,15 @@ export function clickOnBookmarkedAppsBtn() {
 export function verifyAppsAreVisible(appNames) {
   appNames.forEach((appName) => {
     cy.contains(appName).should('be.visible')
+  })
+}
+
+export function verifyPinnedApps(pinnedApps) {
+  pinnedApps.forEach((appName) => {
+    cy.get('p')
+      .contains(pinnedAppsStr)
+      .within(() => {})
+    cy.get('li').contains(appName).should('be.visible')
   })
 }
 

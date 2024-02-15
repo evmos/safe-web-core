@@ -29,7 +29,9 @@ import { DelegateCallWarning, UnsignedWarning } from '@/components/transactions/
 import Multisend from '@/components/transactions/TxDetails/TxData/DecodedData/Multisend'
 import useSafeInfo from '@/hooks/useSafeInfo'
 import useIsPending from '@/hooks/useIsPending'
-import { trackEvent, TX_LIST_EVENTS } from '@/services/analytics'
+import { isTrustedTx } from '@/utils/transactions'
+import { useHasFeature } from '@/hooks/useChains'
+import { FEATURES } from '@/utils/chains'
 
 export const NOT_AVAILABLE = 'n/a'
 
@@ -40,6 +42,7 @@ type TxDetailsProps = {
 
 const TxDetailsBlock = ({ txSummary, txDetails }: TxDetailsProps): ReactElement => {
   const isPending = useIsPending(txSummary.id)
+  const hasDefaultTokenlist = useHasFeature(FEATURES.DEFAULT_TOKENLIST)
   const isQueue = isTxQueued(txSummary.txStatus)
   const awaitingExecution = isAwaitingExecution(txSummary.txStatus)
   const isUnsigned =
@@ -48,6 +51,9 @@ const TxDetailsBlock = ({ txSummary, txDetails }: TxDetailsProps): ReactElement 
   const isUntrusted =
     isMultisigDetailedExecutionInfo(txDetails.detailedExecutionInfo) &&
     txDetails.detailedExecutionInfo.trusted === false
+
+  // If we have no token list we always trust the transfer
+  const isTrustedTransfer = !hasDefaultTokenlist || isTrustedTx(txSummary)
 
   return (
     <>
@@ -59,7 +65,7 @@ const TxDetailsBlock = ({ txSummary, txDetails }: TxDetailsProps): ReactElement 
 
         <div className={css.txData}>
           <ErrorBoundary fallback={<div>Error parsing data</div>}>
-            <TxData txDetails={txDetails} />
+            <TxData txDetails={txDetails} trusted={isTrustedTransfer} />
           </ErrorBoundary>
         </div>
 
@@ -126,8 +132,6 @@ const TxDetails = ({
 
   const [txDetailsData, error, loading] = useAsync<TransactionDetails>(
     async () => {
-      trackEvent(TX_LIST_EVENTS.FETCH_DETAILS)
-
       return txDetails || getTransactionDetails(chainId, txSummary.id)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,16 +141,18 @@ const TxDetails = ({
 
   return (
     <div className={css.container}>
-      {txDetailsData && <TxDetailsBlock txSummary={txSummary} txDetails={txDetailsData} />}
-      {loading && (
+      {txDetailsData ? (
+        <TxDetailsBlock txSummary={txSummary} txDetails={txDetailsData} />
+      ) : loading ? (
         <div className={css.loading}>
           <CircularProgress />
         </div>
-      )}
-      {error && (
-        <div className={css.error}>
-          <ErrorMessage error={error}>Couldn&apos;t load the transaction details</ErrorMessage>
-        </div>
+      ) : (
+        error && (
+          <div className={css.error}>
+            <ErrorMessage error={error}>Couldn&apos;t load the transaction details</ErrorMessage>
+          </div>
+        )
       )}
     </div>
   )

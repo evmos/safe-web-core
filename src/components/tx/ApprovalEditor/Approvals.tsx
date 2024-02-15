@@ -12,8 +12,13 @@ const Approvals = ({ approvalInfos }: { approvalInfos: ApprovalInfo[] }) => {
         if (!tx.tokenInfo) return <></>
 
         return (
-          <ListItem key={tx.tokenAddress + tx.spender} disablePadding data-testid="approval-item">
-            <ApprovalItem spender={tx.spender}>
+          <ListItem
+            key={tx.tokenAddress + tx.spender}
+            className={BigInt(0) === BigInt(tx.amount) ? css.zeroValueApproval : undefined}
+            disablePadding
+            data-testid="approval-item"
+          >
+            <ApprovalItem spender={tx.spender} method={tx.method}>
               <Grid container gap={1} alignItems="center">
                 <SendAmountBlock amount={tx.amountFormatted} tokenInfo={tx.tokenInfo} title="Token" />
               </Grid>

@@ -68,3 +68,6 @@ export const SidebarListItemText = ({
     {children}
   </ListItemText>
 )
+
+export const SidebarListItemCounter = ({ count }: { count?: string }): ReactElement | null =>
+  count ? <Badge color="warning" variant="standard" badgeContent={count} sx={{ ml: 3 }} /> : null

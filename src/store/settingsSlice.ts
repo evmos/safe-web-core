@@ -29,6 +29,8 @@ export type SettingsState = {
 
   tokenList: TOKEN_LISTS
 
+  showOnlyTrustedTransactions?: boolean
+
   shortName: {
     show: boolean
     copy: boolean
@@ -42,7 +44,6 @@ export type SettingsState = {
     onChainSigning: boolean
   }
   transactionExecution: boolean
-  addressEmojis: boolean
 }
 
 export const initialState: SettingsState = {
@@ -51,6 +52,8 @@ export const initialState: SettingsState = {
   tokenList: TOKEN_LISTS.TRUSTED,
 
   hiddenTokens: {},
+
+  showOnlyTrustedTransactions: false,
 
   shortName: {
     show: true,
@@ -69,7 +72,6 @@ export const initialState: SettingsState = {
     onChainSigning: false,
   },
   transactionExecution: true,
-  addressEmojis: false,
 }
 
 export const settingsSlice = createSlice({
@@ -94,15 +96,15 @@ export const settingsSlice = createSlice({
     setDarkMode: (state, { payload }: PayloadAction<SettingsState['theme']['darkMode']>) => {
       state.theme.darkMode = payload
     },
-    setAddressEmojis: (state, { payload }: PayloadAction<SettingsState['addressEmojis']>) => {
-      state.addressEmojis = payload
-    },
     setHiddenTokensForChain: (state, { payload }: PayloadAction<{ chainId: string; assets: string[] }>) => {
       const { chainId, assets } = payload
       state.hiddenTokens[chainId] = assets
     },
     setTokenList: (state, { payload }: PayloadAction<SettingsState['tokenList']>) => {
       state.tokenList = payload
+    },
+    setshowOnlyTrustedTransactions: (state, { payload }: PayloadAction<boolean>) => {
+      state.showOnlyTrustedTransactions = payload
     },
     setRpc: (state, { payload }: PayloadAction<{ chainId: string; rpc: string }>) => {
       const { chainId, rpc } = payload
@@ -132,9 +134,9 @@ export const {
   setCopyShortName,
   setQrShortName,
   setDarkMode,
-  setAddressEmojis,
   setHiddenTokensForChain,
   setTokenList,
+  setshowOnlyTrustedTransactions,
   setRpc,
   setTenderly,
   setOnChainSigning,

@@ -29,21 +29,10 @@ const nextConfig = {
   reactStrictMode: false,
   productionBrowserSourceMaps: true,
   eslint: {
-    dirs: ['src'],
+    dirs: ['src', 'cypress'],
   },
-  modularizeImports: {
-    '@mui/material': {
-      transform: '@mui/material/{{member}}',
-    },
-    '@mui/icons-material/?(((\\w*)?/?)*)': {
-      transform: '@mui/icons-material/{{ matches.[1] }}/{{member}}',
-    },
-    lodash: {
-      transform: 'lodash/{{member}}',
-    },
-    'date-fns': {
-      transform: 'date-fns/{{member}}',
-    },
+  experimental: {
+    optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lodash', 'date-fns', '@sentry/react', '@gnosis.pm/zodiac'],
   },
   webpack(config) {
     config.module.rules.push({

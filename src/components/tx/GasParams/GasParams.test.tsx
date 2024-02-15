@@ -1,16 +1,16 @@
 import { render } from '@/tests/test-utils'
-import GasParams from '@/components/tx/GasParams/index'
+import { _GasParams as GasParams } from '@/components/tx/GasParams/index'
 import type { AdvancedParameters } from '@/components/tx/AdvancedParams'
-import { BigNumber } from '@ethersproject/bignumber'
+import type { ChainInfo } from '@safe-global/safe-gateway-typescript-sdk'
 
 describe('GasParams', () => {
   it('Shows the estimated fee on execution', () => {
     const params: AdvancedParameters = {
-      gasLimit: BigNumber.from('21000'),
+      gasLimit: BigInt('21000'),
       nonce: 0,
       userNonce: 1,
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={true} isEIP1559={true} onEdit={jest.fn} />)
@@ -20,11 +20,11 @@ describe('GasParams', () => {
 
   it('Shows the nonce when signing and if it exists', () => {
     const params: AdvancedParameters = {
-      gasLimit: BigNumber.from('21000'),
+      gasLimit: BigInt('21000'),
       nonce: 0,
       userNonce: 1,
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={false} isEIP1559={true} onEdit={jest.fn} />)
@@ -34,10 +34,10 @@ describe('GasParams', () => {
 
   it("Doesn't show the nonce if it doesn't exist", () => {
     const params: AdvancedParameters = {
-      gasLimit: BigNumber.from('21000'),
+      gasLimit: BigInt('21000'),
       userNonce: 1,
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={false} isEIP1559={true} onEdit={jest.fn} />)
@@ -47,23 +47,32 @@ describe('GasParams', () => {
 
   it('Shows an estimated fee if there is no gasLimit error', () => {
     const params: AdvancedParameters = {
-      gasLimit: BigNumber.from('21000'),
+      gasLimit: BigInt('21000'),
       userNonce: 1,
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
     }
 
-    const { getByText } = render(<GasParams params={params} isExecution={true} isEIP1559={true} onEdit={jest.fn} />)
+    const chainInfo = {
+      nativeCurrency: {
+        symbol: 'SepoliaETH',
+        decimals: 9,
+      },
+    } as unknown as ChainInfo
+
+    const { getByText } = render(
+      <GasParams params={params} isExecution={true} isEIP1559={true} onEdit={jest.fn} chain={chainInfo} />,
+    )
 
     expect(getByText('Estimated fee')).toBeInTheDocument()
-    expect(getByText('0.21')).toBeInTheDocument()
+    expect(getByText('0.21 SepoliaETH')).toBeInTheDocument()
   })
 
   it("Doesn't show an estimated fee if there is no gasLimit", () => {
     const params: AdvancedParameters = {
       userNonce: 1,
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
     }
 
     const { getByText, queryByText } = render(
@@ -78,8 +87,8 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={true} isEIP1559={true} onEdit={jest.fn} />)
@@ -92,8 +101,8 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
       safeTxGas: 100,
     }
 
@@ -107,9 +116,9 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      gasLimit: BigNumber.from('30000'),
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      gasLimit: BigInt('30000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={true} isEIP1559={true} onEdit={jest.fn} />)
@@ -122,8 +131,8 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('10000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('10000'),
     }
 
     const { getByText } = render(
@@ -143,9 +152,9 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      gasLimit: BigNumber.from('30000'),
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('20000'),
+      gasLimit: BigInt('30000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('20000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={true} isEIP1559={true} onEdit={jest.fn} />)
@@ -161,9 +170,9 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      gasLimit: BigNumber.from('30000'),
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('20000'),
+      gasLimit: BigInt('30000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('20000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={true} isEIP1559={false} onEdit={jest.fn} />)
@@ -176,9 +185,9 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      gasLimit: BigNumber.from('30000'),
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('20000'),
+      gasLimit: BigInt('30000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('20000'),
     }
 
     const { getByText } = render(
@@ -198,9 +207,9 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      gasLimit: BigNumber.from('30000'),
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('20000'),
+      gasLimit: BigInt('30000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('20000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={false} isEIP1559={false} onEdit={jest.fn} />)
@@ -212,9 +221,9 @@ describe('GasParams', () => {
     const params: AdvancedParameters = {
       nonce: 123,
       userNonce: 1,
-      gasLimit: BigNumber.from('30000'),
-      maxFeePerGas: BigNumber.from('10000'),
-      maxPriorityFeePerGas: BigNumber.from('20000'),
+      gasLimit: BigInt('30000'),
+      maxFeePerGas: BigInt('10000'),
+      maxPriorityFeePerGas: BigInt('20000'),
     }
 
     const { getByText } = render(<GasParams params={params} isExecution={true} isEIP1559={false} onEdit={jest.fn} />)

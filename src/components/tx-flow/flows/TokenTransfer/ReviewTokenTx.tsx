@@ -3,7 +3,6 @@ import { type TokenTransferParams, TokenTransferType } from '@/components/tx-flo
 import ReviewTokenTransfer from '@/components/tx-flow/flows/TokenTransfer/ReviewTokenTransfer'
 import ReviewSpendingLimitTx from '@/components/tx-flow/flows/TokenTransfer/ReviewSpendingLimitTx'
 
-// TODO: Split this into separate flows
 const ReviewTokenTx = ({
   params,
   onSubmit,

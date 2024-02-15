@@ -1,3 +1,4 @@
+import { safeFormatUnits } from '@/utils/formatters'
 import { Button, Divider, FormControl, InputLabel, MenuItem, TextField } from '@mui/material'
 import { type SafeBalanceResponse } from '@safe-global/safe-gateway-typescript-sdk'
 import css from './styles.module.css'
@@ -5,7 +6,6 @@ import NumberField from '@/components/common/NumberField'
 import { validateDecimalLength, validateLimitedAmount } from '@/utils/validation'
 import { AutocompleteItem } from '@/components/tx-flow/flows/TokenTransfer/CreateTokenTransfer'
 import { useFormContext } from 'react-hook-form'
-import { type BigNumber } from '@ethersproject/bignumber'
 import classNames from 'classnames'
 import { useCallback } from 'react'
 
@@ -17,14 +17,12 @@ export enum TokenAmountFields {
 const TokenAmountInput = ({
   balances,
   selectedToken,
-  onMaxAmountClick,
   maxAmount,
   validate,
 }: {
   balances: SafeBalanceResponse['items']
   selectedToken: SafeBalanceResponse['items'][number] | undefined
-  onMaxAmountClick?: () => void
-  maxAmount?: BigNumber
+  maxAmount?: bigint
   validate?: (value: string) => string | undefined
 }) => {
   const {
@@ -32,6 +30,7 @@ const TokenAmountInput = ({
     register,
     resetField,
     watch,
+    setValue,
   } = useFormContext<{ [TokenAmountFields.tokenAddress]: string; [TokenAmountFields.amount]: string }>()
 
   const tokenAddress = watch(TokenAmountFields.tokenAddress)
@@ -45,18 +44,31 @@ const TokenAmountInput = ({
     [maxAmount, selectedToken?.tokenInfo.decimals],
   )
 
+  const onMaxAmountClick = useCallback(() => {
+    if (!selectedToken || !maxAmount) return
+
+    setValue(TokenAmountFields.amount, safeFormatUnits(maxAmount.toString(), selectedToken.tokenInfo.decimals), {
+      shouldValidate: true,
+    })
+  }, [maxAmount, selectedToken, setValue])
+
   return (
-    <FormControl className={classNames(css.outline, { [css.error]: isAmountError })} fullWidth>
+    <FormControl
+      data-testid="token-amount-section"
+      className={classNames(css.outline, { [css.error]: isAmountError })}
+      fullWidth
+    >
       <InputLabel shrink required className={css.label}>
         {errors[TokenAmountFields.tokenAddress]?.message || errors[TokenAmountFields.amount]?.message || 'Amount'}
       </InputLabel>
       <div className={css.inputs}>
         <NumberField
+          data-testid="token-amount-field"
           variant="standard"
           InputProps={{
             disableUnderline: true,
-            endAdornment: onMaxAmountClick && (
-              <Button className={css.max} onClick={onMaxAmountClick}>
+            endAdornment: maxAmount !== undefined && (
+              <Button data-testid="max-btn" className={css.max} onClick={onMaxAmountClick}>
                 Max
               </Button>
             ),
@@ -71,6 +83,7 @@ const TokenAmountInput = ({
         />
         <Divider orientation="vertical" flexItem />
         <TextField
+          data-testid="token-balance"
           select
           variant="standard"
           InputProps={{
@@ -87,7 +100,7 @@ const TokenAmountInput = ({
           required
         >
           {balances.map((item) => (
-            <MenuItem key={item.tokenInfo.address} value={item.tokenInfo.address}>
+            <MenuItem data-testid="token-item" key={item.tokenInfo.address} value={item.tokenInfo.address}>
               <AutocompleteItem {...item} />
             </MenuItem>
           ))}

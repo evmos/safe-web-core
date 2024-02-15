@@ -1,9 +1,12 @@
-import type { SafeTransactionEstimation } from '@safe-global/safe-gateway-typescript-sdk'
-import { Operation, postSafeGasEstimation } from '@safe-global/safe-gateway-typescript-sdk'
+import {
+  Operation,
+  postSafeGasEstimation,
+  getNonces as fetchNonces,
+  type SafeTransactionEstimation,
+} from '@safe-global/safe-gateway-typescript-sdk'
 import type { MetaTransactionData, SafeTransactionDataPartial } from '@safe-global/safe-core-sdk-types'
 import { isLegacyVersion } from '@/hooks/coreSDK/safeCoreSDK'
 import { Errors, logError } from '@/services/exceptions'
-import { EMPTY_DATA } from '@safe-global/safe-core-sdk/dist/src/utils/constants'
 
 const fetchRecommendedParams = async (
   chainId: string,
@@ -23,25 +26,23 @@ export const getSafeTxGas = async (
   safeAddress: string,
   safeVersion: string,
   safeTxData: SafeTransactionDataPartial,
-): Promise<number | undefined> => {
+): Promise<string | undefined> => {
   const isSafeTxGasRequired = isLegacyVersion(safeVersion)
 
   // For 1.3.0+ Safes safeTxGas is not required
-  if (!isSafeTxGasRequired) return 0
+  if (!isSafeTxGasRequired) return '0'
 
   try {
     const estimation = await fetchRecommendedParams(chainId, safeAddress, safeTxData)
-    return Number(estimation.safeTxGas)
+    return estimation.safeTxGas
   } catch (e) {
     logError(Errors._616, e)
   }
 }
 
-export const getRecommendedNonce = async (chainId: string, safeAddress: string): Promise<number | undefined> => {
-  const blankTxParams = { data: EMPTY_DATA, to: safeAddress, value: '0' }
+export const getNonces = async (chainId: string, safeAddress: string) => {
   try {
-    const estimation = await fetchRecommendedParams(chainId, safeAddress, blankTxParams)
-    return Number(estimation.recommendedNonce)
+    return await fetchNonces(chainId, safeAddress)
   } catch (e) {
     logError(Errors._616, e)
   }

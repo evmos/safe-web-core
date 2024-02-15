@@ -13,7 +13,6 @@ export type NavItem = {
   label: string
   icon?: ReactElement
   href: string
-  badge?: boolean
 }
 
 export const navItems: NavItem[] = [
@@ -44,7 +43,7 @@ export const navItems: NavItem[] = [
   },
   {
     label: 'Settings',
-    icon: <SvgIcon component={SettingsIcon} inheritViewBox />,
+    icon: <SvgIcon data-testid="settings-nav-icon" component={SettingsIcon} inheritViewBox />,
     href: AppRoutes.settings.setup,
   },
 ]
@@ -85,16 +84,16 @@ export const settingsNavItems = [
     href: AppRoutes.settings.appearance,
   },
   {
+    label: 'Security & Login',
+    href: AppRoutes.settings.securityLogin,
+  },
+  {
     label: 'Notifications',
     href: AppRoutes.settings.notifications,
   },
   {
     label: 'Modules',
     href: AppRoutes.settings.modules,
-  },
-  {
-    label: 'Spending limits',
-    href: AppRoutes.settings.spendingLimits,
   },
   {
     label: 'Safe Apps',
@@ -124,6 +123,10 @@ export const generalSettingsNavItems = [
     href: AppRoutes.settings.notifications,
   },
   {
+    label: 'Security & Login',
+    href: AppRoutes.settings.securityLogin,
+  },
+  {
     label: 'Data',
     href: AppRoutes.settings.data,
   },
@@ -137,10 +140,6 @@ export const safeAppsNavItems = [
   {
     label: 'All apps',
     href: AppRoutes.apps.index,
-  },
-  {
-    label: 'Bookmarked apps',
-    href: AppRoutes.apps.bookmarked,
   },
   {
     label: 'My custom apps',

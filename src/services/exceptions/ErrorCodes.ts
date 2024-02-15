@@ -15,7 +15,9 @@ enum ErrorCodes {
   _106 = '106: Failed to get connected wallet',
 
   _302 = '302: Error connecting to the wallet',
-  _303 = '303: Error creating pairing session',
+  _304 = '304: Error enabling MFA',
+  _305 = '305: Error exporting account key',
+  _306 = '306: Error logging in',
 
   _400 = '400: Error requesting browser notification permissions',
   _401 = '401: Error tracking push notifications',
@@ -47,6 +49,8 @@ enum ErrorCodes {
   _704 = '704: Error importing global data',
   _705 = '705: Failed to read from IndexedDB',
   _706 = '706: Failed to write to IndexedDB',
+  _707 = '707: Error requesting clipboard permissions',
+  _708 = '708: Failed to read clipboard',
 
   _800 = '800: Safe creation tx failed',
   _801 = '801: Failed to send a tx with a spending limit',
@@ -55,6 +59,11 @@ enum ErrorCodes {
   _806 = '806: Failed to remove module',
   _807 = '807: Failed to remove guard',
   _808 = '808: Failed to get transaction origin',
+  _809 = '809: Failed decoding transaction',
+  _810 = '810: Error executing a recovery proposal transaction',
+  _811 = '811: Error decoding a recovery proposal transaction',
+  _812 = '812: Failed to recover',
+  _813 = '813: Failed to cancel recovery',
 
   _900 = '900: Error loading Safe App',
   _901 = '901: Error processing Safe Apps SDK request',

@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { hexZeroPad } from 'ethers/lib/utils'
+import { toBeHex } from 'ethers'
 import * as tracking from '@/services/analytics'
 import { set } from 'idb-keyval'
 import * as navigation from 'next/navigation'
@@ -7,7 +7,7 @@ import type { ChainInfo, SafeInfo } from '@safe-global/safe-gateway-typescript-s
 
 import { PushNotificationsBanner, _getSafesToRegister } from '.'
 import { createPushNotificationPrefsIndexedDb } from '@/services/push-notifications/preferences'
-import { render } from '@/tests/test-utils'
+import { act, render } from '@/tests/test-utils'
 import type { AddedSafesOnChain } from '@/store/addedSafesSlice'
 import type { PushNotificationPreferences } from '@/services/push-notifications/preferences'
 import * as useWallet from '@/hooks/wallets/useWallet'
@@ -28,6 +28,10 @@ jest.spyOn(useWallet, 'default').mockImplementation(() => ({
 }))
 
 describe('PushNotificationsBanner', () => {
+  beforeAll(() => {
+    jest.useFakeTimers()
+  })
+
   describe('getSafesToRegister', () => {
     it('should return all added safes if no preferences exist', () => {
       const addedSafesOnChain = {
@@ -98,7 +102,7 @@ describe('PushNotificationsBanner', () => {
       window.localStorage.clear()
 
       jest.spyOn(navigation, 'useParams').mockReturnValue({
-        safe: `eth:${hexZeroPad('0x123', 20)}`,
+        safe: `eth:${toBeHex('0x123', 20)}`,
       })
     })
 
@@ -114,7 +118,7 @@ describe('PushNotificationsBanner', () => {
       const result = render(ui, {
         routerProps: {
           query: {
-            safe: `eth:${hexZeroPad('0x123', 20)}`,
+            safe: `eth:${toBeHex('0x123', 20)}`,
           },
         },
         initialReduxState: {
@@ -130,7 +134,7 @@ describe('PushNotificationsBanner', () => {
           },
           addedSafes: {
             '1': {
-              [hexZeroPad('0x123', 20)]: {},
+              [toBeHex('0x123', 20)]: {},
             } as unknown as AddedSafesOnChain,
           },
           safeInfo: {
@@ -139,7 +143,7 @@ describe('PushNotificationsBanner', () => {
             data: {
               chainId: '1',
               address: {
-                value: hexZeroPad('0x123', 20),
+                value: toBeHex('0x123', 20),
               },
             } as unknown as SafeInfo,
           },
@@ -152,6 +156,7 @@ describe('PushNotificationsBanner', () => {
 
       expect(tracking.trackEvent).toHaveBeenCalledTimes(1)
     })
+
     it('should display the banner', () => {
       const result = render(
         <PushNotificationsBanner>
@@ -160,7 +165,7 @@ describe('PushNotificationsBanner', () => {
         {
           routerProps: {
             query: {
-              safe: `eth:${hexZeroPad('0x123', 20)}`,
+              safe: `eth:${toBeHex('0x123', 20)}`,
             },
           },
           initialReduxState: {
@@ -176,7 +181,7 @@ describe('PushNotificationsBanner', () => {
             },
             addedSafes: {
               '1': {
-                [hexZeroPad('0x123', 20)]: {},
+                [toBeHex('0x123', 20)]: {},
               } as unknown as AddedSafesOnChain,
             },
             safeInfo: {
@@ -185,13 +190,15 @@ describe('PushNotificationsBanner', () => {
               data: {
                 chainId: '1',
                 address: {
-                  value: hexZeroPad('0x123', 20),
+                  value: toBeHex('0x123', 20),
                 },
               } as unknown as SafeInfo,
             },
           },
         },
       )
+
+      jest.advanceTimersByTime(3000)
 
       expect(result.getByText('Get notified about pending signatures', { exact: false })).toBeInTheDocument()
     })
@@ -204,7 +211,7 @@ describe('PushNotificationsBanner', () => {
         {
           routerProps: {
             query: {
-              safe: `eth:${hexZeroPad('0x123', 20)}`,
+              safe: `eth:${toBeHex('0x123', 20)}`,
             },
           },
           initialReduxState: {
@@ -220,7 +227,7 @@ describe('PushNotificationsBanner', () => {
             },
             addedSafes: {
               '1': {
-                [hexZeroPad('0x123', 20)]: {},
+                [toBeHex('0x123', 20)]: {},
               } as unknown as AddedSafesOnChain,
             },
             safeInfo: {
@@ -229,7 +236,7 @@ describe('PushNotificationsBanner', () => {
               data: {
                 chainId: '1',
                 address: {
-                  value: hexZeroPad('0x123', 20),
+                  value: toBeHex('0x123', 20),
                 },
               } as unknown as SafeInfo,
             },
@@ -240,10 +247,10 @@ describe('PushNotificationsBanner', () => {
       expect(result.queryByText('Get notified about pending signatures', { exact: false })).not.toBeInTheDocument()
     })
 
-    it('should not show the banner if the user has dismissed it', () => {
+    it('should not show the banner if the user has dismissed it', async () => {
       window.localStorage.setItem(
         'SAFE_v2__dismissPushNotifications',
-        JSON.stringify({ '1': { [hexZeroPad('0x123', 20)]: true } }),
+        JSON.stringify({ '1': { [toBeHex('0x123', 20)]: true } }),
       )
 
       const result = render(
@@ -264,7 +271,7 @@ describe('PushNotificationsBanner', () => {
             },
             addedSafes: {
               '1': {
-                [hexZeroPad('0x123', 20)]: {},
+                [toBeHex('0x123', 20)]: {},
               } as unknown as AddedSafesOnChain,
             },
             safeInfo: {
@@ -273,13 +280,18 @@ describe('PushNotificationsBanner', () => {
               data: {
                 chainId: '1',
                 address: {
-                  value: hexZeroPad('0x123', 20),
+                  value: toBeHex('0x123', 20),
                 },
               } as unknown as SafeInfo,
             },
           },
         },
       )
+
+      await act(() => {
+        jest.advanceTimersByTime(3000)
+        return Promise.resolve()
+      })
 
       expect(result.queryByText('Get notified about pending signatures', { exact: false })).not.toBeInTheDocument()
     })
@@ -308,7 +320,7 @@ describe('PushNotificationsBanner', () => {
               data: {
                 chainId: '1',
                 address: {
-                  value: hexZeroPad('0x123', 20),
+                  value: toBeHex('0x123', 20),
                 },
               } as unknown as SafeInfo,
             },
@@ -321,9 +333,9 @@ describe('PushNotificationsBanner', () => {
 
     it('should not show the banner if the user has already registered for notifications', () => {
       set(
-        `1:${hexZeroPad('0x123', 20)}`, // Registered
+        `1:${toBeHex('0x123', 20)}`, // Registered
         {
-          safeAddress: hexZeroPad('0x123', 20),
+          safeAddress: toBeHex('0x123', 20),
           chainId: '1',
           preferences: {},
         },
@@ -348,7 +360,7 @@ describe('PushNotificationsBanner', () => {
             },
             addedSafes: {
               '1': {
-                [hexZeroPad('0x123', 20)]: {},
+                [toBeHex('0x123', 20)]: {},
               } as unknown as AddedSafesOnChain,
             },
             safeInfo: {
@@ -357,7 +369,7 @@ describe('PushNotificationsBanner', () => {
               data: {
                 chainId: '1',
                 address: {
-                  value: hexZeroPad('0x123', 20),
+                  value: toBeHex('0x123', 20),
                 },
               } as unknown as SafeInfo,
             },

@@ -1,11 +1,11 @@
-import { Typography, Button, CardActions, Divider, Alert } from '@mui/material'
+import { CircularProgress, Typography, Button, CardActions, Divider, Alert } from '@mui/material'
 import useAsync from '@/hooks/useAsync'
 import { FEATURES } from '@safe-global/safe-gateway-typescript-sdk'
 import type { TransactionDetails } from '@safe-global/safe-gateway-typescript-sdk'
-import { getMultiSendCallOnlyContract } from '@/services/contracts/safeContracts'
+import { getReadOnlyMultiSendCallOnlyContract } from '@/services/contracts/safeContracts'
 import { useCurrentChain } from '@/hooks/useChains'
 import useSafeInfo from '@/hooks/useSafeInfo'
-import { encodeMultiSendData } from '@safe-global/safe-core-sdk/dist/src/utils/transactions/utils'
+import { encodeMultiSendData } from '@safe-global/protocol-kit/dist/src/utils/transactions/utils'
 import { useState, useMemo, useContext } from 'react'
 import type { SyntheticEvent } from 'react'
 import { generateDataRowValue } from '@/components/transactions/TxDetails/Summary/TxDataRow'
@@ -16,7 +16,6 @@ import { TxSimulation } from '@/components/tx/security/tenderly'
 import { WrongChainWarning } from '@/components/tx/WrongChainWarning'
 import { useRelaysBySafe } from '@/hooks/useRemainingRelays'
 import useOnboard from '@/hooks/wallets/useOnboard'
-import { useWeb3 } from '@/hooks/wallets/web3'
 import { logError, Errors } from '@/services/exceptions'
 import { dispatchBatchExecution, dispatchBatchExecutionRelay } from '@/services/tx/tx-sender'
 import { hasRemainingRelays } from '@/utils/relaying'
@@ -25,23 +24,28 @@ import TxCard from '../../common/TxCard'
 import CheckWallet from '@/components/common/CheckWallet'
 import type { ExecuteBatchFlowProps } from '.'
 import { asError } from '@/services/exceptions/utils'
-import SendToBlock from '@/components/tx-flow/flows/TokenTransfer/SendToBlock'
+import SendToBlock from '@/components/tx/SendToBlock'
 import ConfirmationTitle, { ConfirmationTitleTypes } from '@/components/tx/SignOrExecuteForm/ConfirmationTitle'
 import commonCss from '@/components/tx-flow/common/styles.module.css'
 import { TxModalContext } from '@/components/tx-flow'
 import useGasPrice from '@/hooks/useGasPrice'
 import { hasFeature } from '@/utils/chains'
-import type { PayableOverrides } from 'ethers'
+import type { Overrides } from 'ethers'
+import { trackEvent } from '@/services/analytics'
+import { TX_EVENTS, TX_TYPES } from '@/services/analytics/events/transactions'
+import { isWalletRejection } from '@/utils/wallets'
+import WalletRejectionError from '@/components/tx/SignOrExecuteForm/WalletRejectionError'
 
 export const ReviewBatch = ({ params }: { params: ExecuteBatchFlowProps }) => {
   const [isSubmittable, setIsSubmittable] = useState<boolean>(true)
   const [submitError, setSubmitError] = useState<Error | undefined>()
+  const [isRejectedByUser, setIsRejectedByUser] = useState<Boolean>(false)
   const [executionMethod, setExecutionMethod] = useState(ExecutionMethod.RELAY)
   const chain = useCurrentChain()
   const { safe } = useSafeInfo()
   const [relays] = useRelaysBySafe()
   const { setTxFlow } = useContext(TxModalContext)
-  const [gasPrice, , gasPriceLoading] = useGasPrice()
+  const [gasPrice] = useGasPrice()
 
   const maxFeePerGas = gasPrice?.maxFeePerGas
   const maxPriorityFeePerGas = gasPrice?.maxPriorityFeePerGas
@@ -52,19 +56,23 @@ export const ReviewBatch = ({ params }: { params: ExecuteBatchFlowProps }) => {
   const canRelay = hasRemainingRelays(relays)
   const willRelay = canRelay && executionMethod === ExecutionMethod.RELAY
   const onboard = useOnboard()
-  const web3 = useWeb3()
 
   const [txsWithDetails, error, loading] = useAsync<TransactionDetails[]>(() => {
     if (!chain?.chainId) return
     return getTxsWithDetails(params.txs, chain.chainId)
   }, [params.txs, chain?.chainId])
 
-  const multiSendContract = useMemo(() => {
-    if (!chain?.chainId || !safe.version || !web3) return
-    return getMultiSendCallOnlyContract(chain.chainId, safe.version, web3)
-  }, [chain?.chainId, safe.version, web3])
+  const [multiSendContract] = useAsync(async () => {
+    if (!chain?.chainId || !safe.version) return
+    return await getReadOnlyMultiSendCallOnlyContract(chain.chainId, safe.version)
+  }, [chain?.chainId, safe.version])
 
-  const multiSendTxs = useMemo(() => {
+  const [multisendContractAddress = ''] = useAsync(async () => {
+    if (!multiSendContract) return ''
+    return await multiSendContract.getAddress()
+  }, [multiSendContract])
+
+  const [multiSendTxs] = useAsync(async () => {
     if (!txsWithDetails || !chain || !safe.version) return
     return getMultiSendTxs(txsWithDetails, chain, safe.address.value, safe.version)
   }, [chain, safe.address.value, safe.version, txsWithDetails])
@@ -75,9 +83,9 @@ export const ReviewBatch = ({ params }: { params: ExecuteBatchFlowProps }) => {
   }, [txsWithDetails, multiSendTxs])
 
   const onExecute = async () => {
-    if (!onboard || !multiSendTxData || !multiSendContract || !txsWithDetails || gasPriceLoading) return
+    if (!onboard || !multiSendTxData || !multiSendContract || !txsWithDetails || !gasPrice) return
 
-    const overrides: PayableOverrides = isEIP1559
+    const overrides: Overrides = isEIP1559
       ? { maxFeePerGas: maxFeePerGas?.toString(), maxPriorityFeePerGas: maxPriorityFeePerGas?.toString() }
       : { gasPrice: maxFeePerGas?.toString() }
 
@@ -108,20 +116,28 @@ export const ReviewBatch = ({ params }: { params: ExecuteBatchFlowProps }) => {
     e.preventDefault()
     setIsSubmittable(false)
     setSubmitError(undefined)
+    setIsRejectedByUser(false)
 
     try {
       await (willRelay ? onRelay() : onExecute())
       setTxFlow(undefined)
     } catch (_err) {
       const err = asError(_err)
-      logError(Errors._804, err)
+      if (isWalletRejection(err)) {
+        setIsRejectedByUser(true)
+      } else {
+        logError(Errors._804, err)
+        setSubmitError(err)
+      }
+
       setIsSubmittable(true)
-      setSubmitError(err)
       return
     }
+
+    trackEvent({ ...TX_EVENTS.EXECUTE, label: TX_TYPES.batch })
   }
 
-  const submitDisabled = loading || !isSubmittable || gasPriceLoading
+  const submitDisabled = loading || !isSubmittable || !gasPrice
 
   return (
     <>
@@ -133,7 +149,7 @@ export const ReviewBatch = ({ params }: { params: ExecuteBatchFlowProps }) => {
           over the execute button.
         </Typography>
 
-        {multiSendContract && <SendToBlock address={multiSendContract.getAddress()} title="Interact with:" />}
+        {multiSendContract && <SendToBlock address={multisendContractAddress} title="Interact with" />}
 
         {multiSendTxData && (
           <div>
@@ -188,14 +204,22 @@ export const ReviewBatch = ({ params }: { params: ExecuteBatchFlowProps }) => {
           <ErrorMessage error={submitError}>Error submitting the transaction. Please try again.</ErrorMessage>
         )}
 
+        {isRejectedByUser && <WalletRejectionError />}
+
         <div>
           <Divider className={commonCss.nestedDivider} sx={{ pt: 2 }} />
 
           <CardActions>
             <CheckWallet allowNonOwner={true}>
               {(isOk) => (
-                <Button variant="contained" type="submit" disabled={!isOk || submitDisabled} onClick={handleSubmit}>
-                  Submit
+                <Button
+                  variant="contained"
+                  type="submit"
+                  disabled={!isOk || submitDisabled}
+                  onClick={handleSubmit}
+                  sx={{ minWidth: '114px' }}
+                >
+                  {!isSubmittable ? <CircularProgress size={20} /> : 'Submit'}
                 </Button>
               )}
             </CheckWallet>

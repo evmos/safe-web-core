@@ -4,6 +4,20 @@ import { SafeTxContext } from '@/components/tx-flow/SafeTxProvider'
 import { createContext, type Dispatch, type SetStateAction, useContext, useMemo, useState } from 'react'
 import { useRedefine } from '../redefine/useRedefine'
 
+export const defaultSecurityContextValues = {
+  warnings: [],
+  simulationUuid: undefined,
+  balanceChange: undefined,
+  severity: SecuritySeverity.NONE,
+  isLoading: false,
+  error: undefined,
+  needsRiskConfirmation: false,
+  isRiskConfirmed: false,
+  setIsRiskConfirmed: () => {},
+  isRiskIgnored: false,
+  setIsRiskIgnored: () => {},
+}
+
 export const TxSecurityContext = createContext<{
   warnings: NonNullable<RedefineModuleResponse['issues']>
   simulationUuid: string | undefined
@@ -16,23 +30,11 @@ export const TxSecurityContext = createContext<{
   setIsRiskConfirmed: Dispatch<SetStateAction<boolean>>
   isRiskIgnored: boolean
   setIsRiskIgnored: Dispatch<SetStateAction<boolean>>
-}>({
-  warnings: [],
-  simulationUuid: undefined,
-  balanceChange: undefined,
-  severity: SecuritySeverity.NONE,
-  isLoading: false,
-  error: undefined,
-  needsRiskConfirmation: false,
-  isRiskConfirmed: false,
-  setIsRiskConfirmed: () => {},
-  isRiskIgnored: false,
-  setIsRiskIgnored: () => {},
-})
+}>(defaultSecurityContextValues)
 
 export const TxSecurityProvider = ({ children }: { children: JSX.Element }) => {
-  const { safeTx } = useContext(SafeTxContext)
-  const [redefineResponse, redefineError, redefineLoading] = useRedefine(safeTx)
+  const { safeTx, safeMessage } = useContext(SafeTxContext)
+  const [redefineResponse, redefineError, redefineLoading] = useRedefine(safeTx ?? safeMessage)
   const [isRiskConfirmed, setIsRiskConfirmed] = useState(false)
   const [isRiskIgnored, setIsRiskIgnored] = useState(false)
 

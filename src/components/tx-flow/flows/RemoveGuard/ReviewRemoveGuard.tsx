@@ -8,6 +8,10 @@ import { createRemoveGuardTx } from '@/services/tx/tx-sender'
 import { type RemoveGuardFlowProps } from '.'
 import { SafeTxContext } from '@/components/tx-flow/SafeTxProvider'
 
+const onFormSubmit = () => {
+  trackEvent(SETTINGS_EVENTS.MODULES.REMOVE_GUARD)
+}
+
 export const ReviewRemoveGuard = ({ params }: { params: RemoveGuardFlowProps }) => {
   const { setSafeTx, safeTxError, setSafeTxError } = useContext(SafeTxContext)
 
@@ -20,10 +24,6 @@ export const ReviewRemoveGuard = ({ params }: { params: RemoveGuardFlowProps }) 
       logError(Errors._807, safeTxError.message)
     }
   }, [safeTxError])
-
-  const onFormSubmit = () => {
-    trackEvent(SETTINGS_EVENTS.MODULES.REMOVE_GUARD)
-  }
 
   return (
     <SignOrExecuteForm onSubmit={onFormSubmit}>

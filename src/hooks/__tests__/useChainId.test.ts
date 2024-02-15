@@ -5,7 +5,7 @@ import { setLastChainId } from '@/store/sessionSlice'
 import { renderHook } from '@/tests/test-utils'
 import * as useWalletHook from '@/hooks/wallets/useWallet'
 import * as useChains from '@/hooks/useChains'
-import type { ConnectedWallet } from '@/services/onboard'
+import type { ConnectedWallet } from '@/hooks/wallets/useOnboard'
 import type { ChainInfo } from '@safe-global/safe-gateway-typescript-sdk'
 
 // mock useRouter
@@ -74,7 +74,7 @@ describe('useChainId hook', () => {
 
   it('should return the default chainId if no query params', () => {
     const { result } = renderHook(() => useChainId())
-    expect(result.current).toBe('5')
+    expect(result.current).toBe('11155111')
   })
 
   it('should return the chainId based on the chain query', () => {
@@ -128,7 +128,7 @@ describe('useChainId hook', () => {
     }))
 
     const { result } = renderHook(() => useChainId())
-    expect(result.current).toBe('5')
+    expect(result.current).toBe('11155111')
   })
 
   it('should return the last used chain id if no wallet is connected and there is no chain in the URL', () => {

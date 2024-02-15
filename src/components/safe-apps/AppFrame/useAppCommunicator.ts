@@ -1,13 +1,11 @@
 import type { MutableRefObject } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { getAddress } from 'ethers/lib/utils'
-import { BigNumber } from '@ethersproject/bignumber'
+import { getAddress } from 'ethers'
 import type {
   SafeAppData,
   ChainInfo as WebCoreChainInfo,
   TransactionDetails,
 } from '@safe-global/safe-gateway-typescript-sdk'
-import type { Permission, PermissionRequest } from '@safe-global/safe-apps-sdk/dist/src/types/permissions'
 import type {
   AddressBookItem,
   BaseTransaction,
@@ -25,16 +23,16 @@ import type {
   ChainInfo,
   SafeBalances,
 } from '@safe-global/safe-apps-sdk'
-import { Methods } from '@safe-global/safe-apps-sdk'
-import { RPC_CALLS } from '@safe-global/safe-apps-sdk/dist/src/eth/constants'
+import { Methods, RPC_CALLS } from '@safe-global/safe-apps-sdk'
+import type { Permission, PermissionRequest } from '@safe-global/safe-apps-sdk/dist/types/types/permissions'
 import type { SafeSettings } from '@safe-global/safe-apps-sdk'
 import AppCommunicator from '@/services/safe-apps/AppCommunicator'
 import { Errors, logError } from '@/services/exceptions'
-import { createSafeAppsWeb3Provider } from '@/hooks/wallets/web3'
 import type { SafePermissionsRequest } from '@/hooks/safe-apps/permissions'
 import { SAFE_APPS_EVENTS, trackSafeAppEvent } from '@/services/analytics'
 import { useAppSelector } from '@/store'
 import { selectRpc } from '@/store/settingsSlice'
+import { createSafeAppsWeb3Provider } from '@/hooks/wallets/web3'
 
 export enum CommunicatorMessages {
   REJECT_TRANSACTION_MESSAGE = 'Transaction was rejected',
@@ -81,7 +79,7 @@ const useAppCommunicator = (
       return
     }
 
-    return createSafeAppsWeb3Provider(chain.rpcUri, customRpc?.[chain.chainId])
+    return createSafeAppsWeb3Provider(chain, customRpc?.[chain.chainId])
   }, [chain, customRpc])
 
   useEffect(() => {
@@ -90,6 +88,8 @@ const useAppCommunicator = (
     const initCommunicator = (iframeRef: MutableRefObject<HTMLIFrameElement>, app?: SafeAppData) => {
       communicatorInstance = new AppCommunicator(iframeRef, {
         onMessage: (msg) => {
+          if (!msg.data) return
+
           const isCustomApp = app && app.id < 1
 
           trackSafeAppEvent(
@@ -102,13 +102,8 @@ const useAppCommunicator = (
             },
           )
         },
-        onError: (error, data) => {
-          logError(Errors._901, error.message, {
-            contexts: {
-              safeApp: app || {},
-              request: data,
-            },
-          })
+        onError: (error) => {
+          logError(Errors._901, error.message)
         },
       })
 
@@ -169,8 +164,8 @@ const useAppCommunicator = (
       const transactions = txs.map(({ to, value, data }) => {
         return {
           to: getAddress(to),
-          value: BigNumber.from(value).toString(),
-          data,
+          value: value ? BigInt(value).toString() : '0',
+          data: data || '0x',
         }
       })
 

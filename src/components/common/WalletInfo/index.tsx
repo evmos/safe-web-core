@@ -1,44 +1,170 @@
-import { Box, Typography } from '@mui/material'
-import { Suspense } from 'react'
-import type { ReactElement } from 'react'
-
+import WalletBalance from '@/components/common/WalletBalance'
+import { WalletIdenticon } from '@/components/common/WalletOverview'
+import { Box, Button, Typography } from '@mui/material'
+import css from './styles.module.css'
+import SocialLoginInfo from '@/components/common/SocialLoginInfo'
+import Link from 'next/link'
+import { AppRoutes } from '@/config/routes'
+import LockIcon from '@/public/images/common/lock-small.svg'
 import EthHashInfo from '@/components/common/EthHashInfo'
-import WalletIcon from '@/components/common/WalletIcon'
-import type { ConnectedWallet } from '@/hooks/wallets/useOnboard'
+import ChainSwitcher from '@/components/common/ChainSwitcher'
+import { IS_PRODUCTION } from '@/config/constants'
+import { isSocialLoginWallet } from '@/services/mpc/SocialLoginModule'
+import useOnboard, { type ConnectedWallet, switchWallet } from '@/hooks/wallets/useOnboard'
+import { useRouter } from 'next/router'
+import useAddressBook from '@/hooks/useAddressBook'
 import { useAppSelector } from '@/store'
 import { selectChainById } from '@/store/chainsSlice'
+import madProps from '@/utils/mad-props'
+import useSocialWallet from '@/hooks/wallets/mpc/useSocialWallet'
+import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew'
+import useChainId from '@/hooks/useChainId'
 
-import css from './styles.module.css'
+type WalletInfoProps = {
+  wallet: ConnectedWallet
+  balance?: string | bigint
+  currentChainId: ReturnType<typeof useChainId>
+  socialWalletService: ReturnType<typeof useSocialWallet>
+  router: ReturnType<typeof useRouter>
+  onboard: ReturnType<typeof useOnboard>
+  addressBook: ReturnType<typeof useAddressBook>
+  handleClose: () => void
+}
 
-export const UNKNOWN_CHAIN_NAME = 'Unknown'
+export const WalletInfo = ({
+  wallet,
+  balance,
+  currentChainId,
+  socialWalletService,
+  router,
+  onboard,
+  addressBook,
+  handleClose,
+}: WalletInfoProps) => {
+  const chainInfo = useAppSelector((state) => selectChainById(state, wallet.chainId))
+  const prefix = chainInfo?.shortName
 
-const WalletInfo = ({ wallet }: { wallet: ConnectedWallet }): ReactElement => {
-  const walletChain = useAppSelector((state) => selectChainById(state, wallet.chainId))
-  const prefix = walletChain?.shortName
+  const handleSwitchWallet = () => {
+    if (onboard) {
+      handleClose()
+      switchWallet(onboard)
+    }
+  }
+
+  const resetAccount = () => socialWalletService?.__deleteAccount()
+
+  const handleDisconnect = () => {
+    if (!wallet) return
+
+    onboard?.disconnectWallet({
+      label: wallet.label,
+    })
+
+    handleClose()
+  }
+
+  const isSocialLogin = isSocialLoginWallet(wallet.label)
 
   return (
-    <Box className={css.container}>
-      <Box className={css.imageContainer}>
-        <Suspense>
-          <WalletIcon provider={wallet.label} icon={wallet.icon} />
-        </Suspense>
+    <>
+      <Box display="flex" gap="12px">
+        {isSocialLogin ? (
+          <Box>
+            <SocialLoginInfo wallet={wallet} chainInfo={chainInfo} size={36} />
+
+            {socialWalletService && !socialWalletService.isMFAEnabled() && (
+              <Link href={{ pathname: AppRoutes.settings.securityLogin, query: router.query }} passHref>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="warning"
+                  className={css.warningButton}
+                  disableElevation
+                  startIcon={<LockIcon />}
+                  sx={{ mt: 1, p: 1 }}
+                  onClick={handleClose}
+                >
+                  Add multifactor authentication
+                </Button>
+              </Link>
+            )}
+          </Box>
+        ) : (
+          <>
+            <WalletIdenticon wallet={wallet} size={36} />
+            <Typography variant="body2" className={css.address}>
+              <EthHashInfo
+                address={wallet.address}
+                name={addressBook[wallet.address] || wallet.ens || wallet.label}
+                showAvatar={false}
+                showPrefix={false}
+                hasExplorer
+                showCopyButton
+                prefix={prefix}
+              />
+            </Typography>
+          </>
+        )}
       </Box>
 
-      <Box className={css.walletDetails}>
-        <Typography variant="caption" component="div" className={css.walletName}>
-          {wallet.label} @ {walletChain?.chainName || UNKNOWN_CHAIN_NAME}
-        </Typography>
+      <Box className={css.rowContainer}>
+        <Box className={css.row}>
+          <Typography variant="body2" color="primary.light">
+            Wallet
+          </Typography>
+          <Typography variant="body2">{wallet.label}</Typography>
+        </Box>
 
-        <Typography variant="caption" fontWeight="bold" component="div">
-          {wallet.ens ? (
-            <div>{wallet.ens}</div>
-          ) : (
-            <EthHashInfo prefix={prefix || ''} address={wallet.address} showName={false} showAvatar avatarSize={12} />
-          )}
-        </Typography>
+        <Box className={css.row}>
+          <Typography variant="body2" color="primary.light">
+            Balance
+          </Typography>
+          <Typography variant="body2" textAlign="right">
+            <WalletBalance balance={balance} />
+
+            {currentChainId !== chainInfo?.chainId && (
+              <>
+                <Typography variant="body2" color="primary.light">
+                  ({chainInfo?.chainName || 'Unknown chain'})
+                </Typography>
+              </>
+            )}
+          </Typography>
+        </Box>
       </Box>
-    </Box>
+
+      <Box display="flex" flexDirection="column" gap={2} width={1}>
+        <ChainSwitcher fullWidth />
+
+        <Button variant="contained" size="small" onClick={handleSwitchWallet} fullWidth>
+          Switch wallet
+        </Button>
+
+        <Button
+          onClick={handleDisconnect}
+          variant="danger"
+          size="small"
+          fullWidth
+          disableElevation
+          startIcon={<PowerSettingsNewIcon />}
+        >
+          Disconnect
+        </Button>
+
+        {!IS_PRODUCTION && isSocialLogin && (
+          <Button onClick={resetAccount} variant="danger" size="small" fullWidth disableElevation>
+            Delete account
+          </Button>
+        )}
+      </Box>
+    </>
   )
 }
 
-export default WalletInfo
+export default madProps(WalletInfo, {
+  socialWalletService: useSocialWallet,
+  router: useRouter,
+  onboard: useOnboard,
+  addressBook: useAddressBook,
+  currentChainId: useChainId,
+})

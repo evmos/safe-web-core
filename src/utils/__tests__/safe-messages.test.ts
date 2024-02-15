@@ -1,11 +1,11 @@
-import { ethers } from 'ethers'
+import { zeroPadValue } from 'ethers'
 import type { SafeInfo } from '@safe-global/safe-gateway-typescript-sdk'
 
 import { generateSafeMessageTypedData, isOffchainEIP1271Supported } from '../safe-messages'
-import { hexZeroPad } from 'ethers/lib/utils'
+import { toBeHex } from 'ethers'
 import { FEATURES } from '../chains'
 
-const MOCK_ADDRESS = ethers.utils.hexZeroPad('0x123', 20)
+const MOCK_ADDRESS = zeroPadValue('0x0123', 20)
 
 describe('safe-messages', () => {
   describe('createSafeMessage', () => {
@@ -281,7 +281,7 @@ describe('safe-messages', () => {
           {
             chainId: '5',
             version: '1.3.0',
-            fallbackHandler: { value: hexZeroPad('0x2222', 20) },
+            fallbackHandler: { value: toBeHex('0x2222', 20) },
           } as any,
           {
             features: [FEATURES.EIP1271],
@@ -327,7 +327,7 @@ describe('safe-messages', () => {
           {
             chainId: '5',
             version: '1.3.0',
-            fallbackHandler: { value: hexZeroPad('0x2222', 20) },
+            fallbackHandler: { value: toBeHex('0x2222', 20) },
           } as any,
           {
             features: [FEATURES.EIP1271],
@@ -335,6 +335,21 @@ describe('safe-messages', () => {
           '7.10.0',
         ),
       ).toBeFalsy()
+    })
+
+    it('true for no safeAppsSdk version', () => {
+      expect(
+        isOffchainEIP1271Supported(
+          {
+            chainId: '5',
+            version: '1.3.0',
+            fallbackHandler: { value: toBeHex('0x2222', 20) },
+          } as any,
+          {
+            features: [FEATURES.EIP1271],
+          } as any,
+        ),
+      ).toBeTruthy()
     })
   })
 })

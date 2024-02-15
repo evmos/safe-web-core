@@ -12,7 +12,7 @@ import {
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { useContext } from 'react'
+import { useContext, useEffect } from 'react'
 import { SafeMessageListItemType, SafeMessageStatus } from '@safe-global/safe-gateway-typescript-sdk'
 import type { ReactElement } from 'react'
 import type { SafeMessage } from '@safe-global/safe-gateway-typescript-sdk'
@@ -38,6 +38,16 @@ import InfoBox from '@/components/safe-messages/InfoBox'
 import { DecodedMsg } from '@/components/safe-messages/DecodedMsg'
 import TxCard from '@/components/tx-flow/common/TxCard'
 import { dispatchPreparedSignature } from '@/services/safe-messages/safeMsgNotifications'
+import { trackEvent } from '@/services/analytics'
+import { TX_EVENTS, TX_TYPES } from '@/services/analytics/events/transactions'
+import { SafeTxContext } from '../../SafeTxProvider'
+import RiskConfirmationError from '@/components/tx/SignOrExecuteForm/RiskConfirmationError'
+import { Redefine } from '@/components/tx/security/redefine'
+import { TxSecurityContext } from '@/components/tx/security/shared/TxSecurityContext'
+import { isEIP712TypedData } from '@/utils/safe-messages'
+import ApprovalEditor from '@/components/tx/ApprovalEditor'
+import { ErrorBoundary } from '@sentry/react'
+import { isWalletRejection } from '@/utils/wallets'
 
 const createSkeletonMessage = (confirmationsRequired: number): SafeMessage => {
   return {
@@ -63,7 +73,7 @@ const MessageHashField = ({ label, hashValue }: { label: string; hashValue: stri
     <Typography variant="body2" fontWeight={700} mt={2}>
       {label}:
     </Typography>
-    <Typography variant="body2">
+    <Typography variant="body2" component="div">
       <EthHashInfo address={hashValue} showAvatar={false} shortAddress={false} showCopyButton />
     </Typography>
   </>
@@ -94,6 +104,8 @@ const MessageDialogError = ({ isOwner, submitError }: { isOwner: boolean; submit
       ? 'No wallet is connected.'
       : !isOwner
       ? "You are currently not an owner of this Safe Account and won't be able to confirm this message."
+      : submitError && isWalletRejection(submitError)
+      ? 'User rejected signing.'
       : submitError
       ? 'Error confirming the message. Please try again.'
       : null
@@ -165,23 +177,20 @@ export type ConfirmProps = BaseProps & {
 const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmProps): ReactElement => {
   // Hooks & variables
   const { setTxFlow } = useContext(TxModalContext)
+  const { setSafeMessage: setContextSafeMessage } = useContext(SafeTxContext)
+  const { needsRiskConfirmation, isRiskConfirmed, setIsRiskIgnored } = useContext(TxSecurityContext)
   const { palette } = useTheme()
   const { safe } = useSafeInfo()
   const isOwner = useIsSafeOwner()
   const wallet = useWallet()
+  useHighlightHiddenTab()
 
   const { decodedMessage, safeMessageMessage, safeMessageHash } = useDecodedSafeMessage(message, safe)
   const [safeMessage, setSafeMessage] = useSafeMessage(safeMessageHash)
-
-  useHighlightHiddenTab()
-
-  const decodedMessageAsString =
-    typeof decodedMessage === 'string' ? decodedMessage : JSON.stringify(decodedMessage, null, 2)
-
+  const isPlainTextMessage = typeof decodedMessage === 'string'
+  const decodedMessageAsString = isPlainTextMessage ? decodedMessage : JSON.stringify(decodedMessage, null, 2)
   const hasSigned = !!safeMessage?.confirmations.some(({ owner }) => owner.value === wallet?.address)
-
   const isFullySigned = !!safeMessage?.preparedSignature
-
   const isDisabled = !isOwner || hasSigned
 
   const { onSign, submitError } = useSyncSafeMessageSigner(
@@ -194,10 +203,20 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
   )
 
   const handleSign = async () => {
+    if (needsRiskConfirmation && !isRiskConfirmed) {
+      setIsRiskIgnored(true)
+      return
+    }
+
     const updatedMessage = await onSign()
+
     if (updatedMessage) {
       setSafeMessage(updatedMessage)
     }
+
+    // Track first signature as creation
+    const isCreation = updatedMessage?.confirmations.length === 1
+    trackEvent({ ...(isCreation ? TX_EVENTS.CREATE : TX_EVENTS.CONFIRM), label: TX_TYPES.typed_message })
   }
 
   const onContinue = async () => {
@@ -207,24 +226,39 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
     await dispatchPreparedSignature(safeMessage, safeMessageHash, () => setTxFlow(undefined), requestId)
   }
 
+  // Set message for redefine scan
+  useEffect(() => {
+    if (typeof message !== 'string') {
+      setContextSafeMessage(message)
+    }
+  }, [message, setContextSafeMessage])
+
   return (
     <>
       <TxCard>
         <CardContent>
           <DialogHeader threshold={safe.threshold} />
 
-          <Typography fontWeight={700} mb={1}>
+          {isEIP712TypedData(decodedMessage) && (
+            <ErrorBoundary fallback={<div>Error parsing data</div>}>
+              <ApprovalEditor safeMessage={decodedMessage} />
+            </ErrorBoundary>
+          )}
+
+          <Typography fontWeight={700} mt={2} mb={1}>
             Message: <CopyButton text={decodedMessageAsString} />
           </Typography>
           <DecodedMsg message={decodedMessage} isInModal />
 
-          <Accordion sx={{ mt: 2, '&.Mui-expanded': { mt: 2 } }}>
+          <Accordion sx={{ my: 2, '&.Mui-expanded': { mt: 2 } }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>SafeMessage details</AccordionSummary>
             <AccordionDetails>
               <MessageHashField label="SafeMessage" hashValue={safeMessageMessage} />
               <MessageHashField label="SafeMessage hash" hashValue={safeMessageHash} />
             </AccordionDetails>
           </Accordion>
+
+          <Redefine />
         </CardContent>
       </TxCard>
 
@@ -244,7 +278,7 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
               }
             >
               <MsgSigners
-                msg={safeMessage || createSkeletonMessage(safe.threshold)}
+                msg={safeMessage ?? createSkeletonMessage(safe.threshold)}
                 showOnlyConfirmations
                 showMissingSignatures
                 backgroundColor={palette.info.background}
@@ -254,6 +288,8 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
             <WrongChainWarning />
 
             <MessageDialogError isOwner={isOwner} submitError={submitError} />
+
+            <RiskConfirmationError />
           </TxCard>
           <TxCard>
             <CardActions>
