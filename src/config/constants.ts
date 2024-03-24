@@ -59,12 +59,12 @@ export enum SafeAppsTag {
 }
 
 export const WC_APP_PROD = {
-  id: 111,
-  url: 'https://apps-portal.safe.global/wallet-connect',
+  id: 4,
+  url: 'https://apps.safe.protofire.io/wallet-connect',
 }
 export const WC_APP_DEV = {
-  id: 25,
-  url: 'https://safe-apps.dev.5afe.dev/wallet-connect',
+  id: 2,
+  url: 'https://dev-apps.safe.protofire.io/wallet-connect',
 }
 
 // Safe Gelato relay service
