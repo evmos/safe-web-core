@@ -20,14 +20,14 @@ const WcSampleDapps = ({ onUnload }: { onUnload: () => void }) => {
 
   return (
     <Typography variant="body2" display="flex" justifyContent="space-between" alignItems="center" mt={3}>
-      {SAMPLE_DAPPS.map((item) => (
+      {/* {SAMPLE_DAPPS.map((item) => (
         <Typography variant="body2" key={item.url}>
           <ExternalLink href={item.url} noIcon px={1}>
             <img src={item.icon} alt={item.name} width={32} height={32} style={{ marginRight: '0.5em' }} />
             {item.name}
           </ExternalLink>
         </Typography>
-      ))}
+      ))} */}
     </Typography>
   )
 }
