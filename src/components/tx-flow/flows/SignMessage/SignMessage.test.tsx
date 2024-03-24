@@ -1,3 +1,4 @@
+import { extendedSafeInfoBuilder } from '@/tests/builders/safe'
 import { hexlify, zeroPadValue, toUtf8Bytes } from 'ethers'
 import type { SafeInfo, SafeMessage, SafeMessageListPage } from '@safe-global/safe-gateway-typescript-sdk'
 import { SafeMessageListItemType } from '@safe-global/safe-gateway-typescript-sdk'
@@ -90,19 +91,22 @@ describe('SignMessage', () => {
   })
 
   const mockUseSafeMessages = useSafeMessages as jest.Mock
+  const extendedSafeInfo = {
+    ...extendedSafeInfoBuilder().build(),
+    version: '1.3.0',
+    address: {
+      value: zeroPadValue('0x01', 20),
+    },
+    chainId: '5',
+    threshold: 2,
+    deployed: true,
+  }
 
   beforeEach(() => {
     jest.clearAllMocks()
 
     jest.spyOn(useSafeInfoHook, 'default').mockImplementation(() => ({
-      safe: {
-        version: '1.3.0',
-        address: {
-          value: zeroPadValue('0x01', 20),
-        },
-        chainId: '5',
-        threshold: 2,
-      } as SafeInfo,
+      safe: extendedSafeInfo,
       safeAddress: zeroPadValue('0x01', 20),
       safeError: undefined,
       safeLoading: false,
@@ -255,16 +259,10 @@ describe('SignMessage', () => {
 
     expect(proposalSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        safe: {
-          version: '1.3.0',
-          address: {
-            value: zeroPadValue('0x01', 20),
-          },
-          chainId: '5',
-          threshold: 2,
-        } as SafeInfo,
+        safe: extendedSafeInfo,
         message: 'Hello world!',
         safeAppId: 25,
+        //onboard: expect.anything(),
       }),
     )
 
@@ -363,15 +361,9 @@ describe('SignMessage', () => {
 
     expect(confirmationSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        safe: {
-          version: '1.3.0',
-          address: {
-            value: zeroPadValue('0x01', 20),
-          },
-          chainId: '5',
-          threshold: 2,
-        } as SafeInfo,
+        safe: extendedSafeInfo,
         message: 'Hello world!',
+        onboard: expect.anything(),
       }),
     )
 
@@ -439,7 +431,7 @@ describe('SignMessage', () => {
     )
 
     expect(
-      getByText("You are currently not an owner of this Safe Account and won't be able to confirm this message."),
+      getByText("You are currently not a signer of this Safe Account and won't be able to confirm this message."),
     ).toBeInTheDocument()
 
     expect(getByText('Sign')).toBeDisabled()

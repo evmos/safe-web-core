@@ -1,3 +1,4 @@
+import { useCurrentChain } from '@/hooks/useChains'
 import { useContext, useEffect } from 'react'
 import { Typography, Divider, Box, SvgIcon, Paper } from '@mui/material'
 
@@ -20,21 +21,24 @@ export const ReviewOwner = ({ params }: { params: AddOwnerFlowProps | ReplaceOwn
   const { setSafeTx, setSafeTxError } = useContext(SafeTxContext)
   const { safe } = useSafeInfo()
   const { chainId } = safe
+  const chain = useCurrentChain()
   const { newOwner, removedOwner, threshold } = params
 
   useEffect(() => {
+    if (!chain) return
+
     const promise = removedOwner
-      ? createSwapOwnerTx({
+      ? createSwapOwnerTx(chain, safe.deployed, {
           newOwnerAddress: newOwner.address,
           oldOwnerAddress: removedOwner.address,
         })
-      : createAddOwnerTx({
+      : createAddOwnerTx(chain, safe.deployed, {
           ownerAddress: newOwner.address,
           threshold,
         })
 
     promise.then(setSafeTx).catch(setSafeTxError)
-  }, [removedOwner, newOwner, threshold, setSafeTx, setSafeTxError])
+  }, [removedOwner, newOwner, threshold, setSafeTx, setSafeTxError, chain, safe.deployed])
 
   const addAddressBookEntryAndSubmit = () => {
     if (typeof newOwner.name !== 'undefined') {
@@ -57,7 +61,7 @@ export const ReviewOwner = ({ params }: { params: AddOwnerFlowProps | ReplaceOwn
         <Paper sx={{ backgroundColor: ({ palette }) => palette.warning.background, p: 2 }}>
           <Typography color="text.secondary" mb={2} display="flex" alignItems="center">
             <SvgIcon component={MinusIcon} inheritViewBox fontSize="small" sx={{ mr: 1 }} />
-            Previous owner
+            Previous signer
           </Typography>
           <EthHashInfo
             name={params.removedOwner.name}
@@ -73,7 +77,7 @@ export const ReviewOwner = ({ params }: { params: AddOwnerFlowProps | ReplaceOwn
       <Box>
         <Typography variant="body2">Any transaction requires the confirmation of:</Typography>
         <Typography>
-          <b>{threshold}</b> out of <b>{safe.owners.length + (removedOwner ? 0 : 1)} owners</b>
+          <b>{threshold}</b> out of <b>{safe.owners.length + (removedOwner ? 0 : 1)} signers</b>
         </Typography>
       </Box>
       <Divider className={commonCss.nestedDivider} />

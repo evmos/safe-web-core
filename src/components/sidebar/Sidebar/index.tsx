@@ -1,16 +1,15 @@
 import { useCallback, useState, type ReactElement } from 'react'
-import { Box, Divider, Drawer, IconButton } from '@mui/material'
+import { Box, Divider, Drawer } from '@mui/material'
 import ChevronRight from '@mui/icons-material/ChevronRight'
 
 import ChainIndicator from '@/components/common/ChainIndicator'
 import SidebarHeader from '@/components/sidebar/SidebarHeader'
-import SafeList from '@/components/sidebar/SafeList'
 import SidebarNavigation from '@/components/sidebar/SidebarNavigation'
 import SidebarFooter from '@/components/sidebar/SidebarFooter'
 
 import css from './styles.module.css'
 import { trackEvent, OVERVIEW_EVENTS } from '@/services/analytics'
-import { DataWidget } from '@/components/welcome/SafeListDrawer/DataWidget'
+import MyAccounts from '@/components/welcome/MyAccounts'
 
 const Sidebar = (): ReactElement => {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false)
@@ -31,9 +30,9 @@ const Sidebar = (): ReactElement => {
         <ChainIndicator showLogo={false} />
 
         {/* Open the safes list */}
-        <IconButton data-testid="open-safes-icon" className={css.drawerButton} onClick={onDrawerToggle}>
+        <button data-testid="open-safes-icon" className={css.drawerButton} onClick={onDrawerToggle}>
           <ChevronRight />
-        </IconButton>
+        </button>
 
         {/* Address, balance, copy button, etc */}
         <SidebarHeader />
@@ -53,11 +52,7 @@ const Sidebar = (): ReactElement => {
 
       <Drawer variant="temporary" anchor="left" open={isDrawerOpen} onClose={onDrawerToggle}>
         <div className={css.drawer}>
-          <SafeList closeDrawer={closeDrawer} />
-
-          <div className={css.dataWidget}>
-            <DataWidget />
-          </div>
+          <MyAccounts onLinkClick={closeDrawer}></MyAccounts>
         </div>
       </Drawer>
     </div>

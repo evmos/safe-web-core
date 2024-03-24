@@ -13,7 +13,8 @@ describe('Safe creation Google tests', () => {
     // createwallet.loginGoogleAPI()
   })
 
-  it('Verify that "Connect with Google" option is disabled for the networks without Relay on the Welcome page', () => {
+  // TODO: Clarify requirements
+  it.skip('Verify that "Connect with Google" option is disabled for the networks without Relay on the Welcome page', () => {
     owner.clickOnWalletExpandMoreIcon()
     owner.clickOnDisconnectBtn()
     createwallet.selectNetwork(constants.networks.polygon)
@@ -30,6 +31,7 @@ describe('Safe creation Google tests', () => {
 
   it.skip('Verify a successful safe creation with a Google account', { defaultCommandTimeout: 90000 }, () => {
     createwallet.verifyGoogleSignin().click()
+    createwallet.clickOnContinueWithWalletBtn()
     createwallet.verifyOwnerInfoIsPresent()
     createwallet.clickOnReviewStepNextBtn()
     createwallet.verifySafeIsBeingCreated()
@@ -38,6 +40,7 @@ describe('Safe creation Google tests', () => {
 
   it.skip('Verify a successful transaction creation with Google account', { defaultCommandTimeout: 90000 }, () => {
     createwallet.verifyGoogleSignin().click()
+    createwallet.clickOnContinueWithWalletBtn()
     createwallet.clickOnReviewStepNextBtn()
     createwallet.verifySafeCreationIsComplete()
     navigation.clickOnSideNavigation(navigation.sideNavSettingsIcon)

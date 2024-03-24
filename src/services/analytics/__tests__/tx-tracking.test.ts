@@ -144,7 +144,7 @@ describe('getTransactionTrackingType', () => {
         type: TransactionInfoType.CUSTOM,
       },
       safeAppInfo: {
-        url: 'https://apps-portal.safe.global/wallet-connect',
+        url: 'https://safe-apps.dev.5afe.dev/wallet-connect',
       },
     } as unknown)
 
@@ -161,7 +161,7 @@ describe('getTransactionTrackingType', () => {
       },
     } as unknown)
 
-    expect(txType).toEqual(TX_TYPES.safeapps)
+    expect(txType).toEqual('https://gnosis-safe.io/app')
   })
 
   it('should return batch for multisend transactions', async () => {

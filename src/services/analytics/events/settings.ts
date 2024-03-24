@@ -36,10 +36,6 @@ export const SETTINGS_EVENTS = {
     },
   },
   APPEARANCE: {
-    PREPEND_PREFIXES: {
-      action: 'Prepend EIP-3770 prefixes',
-      category: SETTINGS_CATEGORY,
-    },
     COPY_PREFIXES: {
       action: 'Copy EIP-3770 prefixes',
       category: SETTINGS_CATEGORY,
@@ -79,14 +75,6 @@ export const SETTINGS_EVENTS = {
     },
   },
   DATA: {
-    EXPORT_ALL_BUTTON: {
-      action: 'Export all data button clicked',
-      category: SETTINGS_CATEGORY,
-    },
-    IMPORT_ADDED_SAFES: {
-      action: 'Imported added safes via Import all',
-      category: SETTINGS_CATEGORY,
-    },
     IMPORT_ADDRESS_BOOK: {
       action: 'Imported address book via Import all',
       category: SETTINGS_CATEGORY,

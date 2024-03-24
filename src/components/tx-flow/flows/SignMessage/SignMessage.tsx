@@ -89,7 +89,7 @@ const DialogHeader = ({ threshold }: { threshold: number }) => (
     </Typography>
     {threshold > 1 && (
       <Typography variant="body1" textAlign="center" mb={2}>
-        To sign this message, collect signatures from <b>{threshold} owners</b> of your Safe Account.
+        To sign this message, collect signatures from <b>{threshold} signers</b> of your Safe Account.
       </Typography>
     )}
   </>
@@ -103,7 +103,7 @@ const MessageDialogError = ({ isOwner, submitError }: { isOwner: boolean; submit
     !wallet || !onboard
       ? 'No wallet is connected.'
       : !isOwner
-      ? "You are currently not an owner of this Safe Account and won't be able to confirm this message."
+      ? "You are currently not a signer of this Safe Account and won't be able to confirm this message."
       : submitError && isWalletRejection(submitError)
       ? 'User rejected signing.'
       : submitError
@@ -191,7 +191,7 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
   const decodedMessageAsString = isPlainTextMessage ? decodedMessage : JSON.stringify(decodedMessage, null, 2)
   const hasSigned = !!safeMessage?.confirmations.some(({ owner }) => owner.value === wallet?.address)
   const isFullySigned = !!safeMessage?.preparedSignature
-  const isDisabled = !isOwner || hasSigned
+  const isDisabled = !isOwner || hasSigned || !safe.deployed
 
   const { onSign, submitError } = useSyncSafeMessageSigner(
     safeMessage,
@@ -290,6 +290,8 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
             <MessageDialogError isOwner={isOwner} submitError={submitError} />
 
             <RiskConfirmationError />
+
+            {!safe.deployed && <ErrorMessage>Your Safe Account is not activated yet.</ErrorMessage>}
           </TxCard>
           <TxCard>
             <CardActions>

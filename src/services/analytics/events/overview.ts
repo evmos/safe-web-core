@@ -23,17 +23,28 @@ export const OVERVIEW_EVENTS = {
     action: 'Open Safe on block explorer',
     category: OVERVIEW_CATEGORY,
   },
-  ADD_SAFE: {
-    action: 'Add Safe',
+  ADD_TO_WATCHLIST: {
+    action: 'Add Safe to watchlist',
+    category: OVERVIEW_CATEGORY,
+  },
+  REMOVE_FROM_WATCHLIST: {
+    action: 'Remove from watchlist',
+    category: OVERVIEW_CATEGORY,
+  },
+  DELETED_FROM_WATCHLIST: {
+    action: 'Deleted from watchlist',
+    category: OVERVIEW_CATEGORY,
+  },
+  TOTAL_SAFES_OWNED: {
+    action: 'Total Safes owned',
+    category: OVERVIEW_CATEGORY,
+  },
+  TOTAL_SAFES_WATCHLIST: {
+    action: 'Total Safes watchlist',
     category: OVERVIEW_CATEGORY,
   },
   SIDEBAR: {
     action: 'Sidebar',
-    category: OVERVIEW_CATEGORY,
-  },
-  TOTAL_ADDED_SAFES: {
-    event: EventType.META,
-    action: 'Total added Safes',
     category: OVERVIEW_CATEGORY,
   },
   WHATS_NEW: {
@@ -52,6 +63,16 @@ export const OVERVIEW_EVENTS = {
     action: 'New transaction',
     category: OVERVIEW_CATEGORY,
   },
+  CHOOSE_TRANSACTION_TYPE: {
+    action: 'Choose transaction type',
+    category: OVERVIEW_CATEGORY,
+    event: EventType.CLICK,
+  },
+  ADD_FUNDS: {
+    action: 'Add funds',
+    category: OVERVIEW_CATEGORY,
+    event: EventType.CLICK,
+  },
   NOTIFICATION_CENTER: {
     action: 'Open Notification Center',
     category: OVERVIEW_CATEGORY,
@@ -62,10 +83,6 @@ export const OVERVIEW_EVENTS = {
   },
   SIDEBAR_RENAME: {
     action: 'Rename Safe from sidebar',
-    category: OVERVIEW_CATEGORY,
-  },
-  SIDEBAR_REMOVE: {
-    action: 'Remove Safe from sidebar',
     category: OVERVIEW_CATEGORY,
   },
   SAFE_TOKEN_WIDGET: {
@@ -81,11 +98,11 @@ export const OVERVIEW_EVENTS = {
     category: OVERVIEW_CATEGORY,
   },
   EXPORT_DATA: {
-    action: 'Export data from sidebar',
+    action: 'Export data',
     category: OVERVIEW_CATEGORY,
   },
   IMPORT_DATA: {
-    action: 'Import data from sidebar',
+    action: 'Import data',
     category: OVERVIEW_CATEGORY,
   },
   RELAYING_HELP_ARTICLE: {
@@ -112,10 +129,34 @@ export const OVERVIEW_EVENTS = {
     action: 'Buy crypto button',
     category: OVERVIEW_CATEGORY,
   },
+  SHOW_MORE_SAFES: {
+    action: 'Show more Safes',
+    category: OVERVIEW_CATEGORY,
+  },
+  CREATE_NEW_SAFE: {
+    action: 'Create new Safe',
+    category: OVERVIEW_CATEGORY,
+  },
+  PROCEED_WITH_TX: {
+    event: EventType.CLICK,
+    action: 'Proceed with transaction',
+    category: OVERVIEW_CATEGORY,
+  },
 }
 
 export enum OPEN_SAFE_LABELS {
   sidebar = 'sidebar',
   after_create = 'after_create',
   after_add = 'after_add',
+  login_page = 'login_page',
+}
+
+export enum OVERVIEW_LABELS {
+  sidebar = 'sidebar',
+  quick_add = 'quick_add',
+  quick_remove = 'quick_remove',
+  top_bar = 'top_bar',
+  welcome_page = 'welcome_page',
+  login_page = 'login_page',
+  settings = 'settings',
 }

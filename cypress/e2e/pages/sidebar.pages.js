@@ -3,15 +3,16 @@ import * as main from './main.page'
 import * as modal from '../pages/modals.page'
 import * as navigation from './navigation.page'
 import { safeHeaderInfo } from './import_export.pages'
+import * as file from '../pages/import_export.pages'
 
-const chainLogo = '[data-testid="chain-logo"]'
+export const chainLogo = '[data-testid="chain-logo"]'
 const safeIcon = '[data-testid="safe-icon"]'
 const sidebarContainer = '[data-testid="sidebar-container"]'
 const openSafesIcon = '[data-testid="open-safes-icon"]'
 const qrModalBtn = '[data-testid="qr-modal-btn"]'
 const copyAddressBtn = '[data-testid="copy-address-btn"]'
 const explorerBtn = '[data-testid="explorer-btn"]'
-const sideBarListItem = '[data-testid="sidebar-list-item"]'
+export const sideBarListItem = '[data-testid="sidebar-list-item"]'
 const sideBarListItemWhatsNew = '[data-testid="list-item-whats-new"]'
 const sideBarListItemNeedHelp = '[data-testid="list-item-need-help"]'
 const sideSafeListItem = '[data-testid="safe-list-item"]'
@@ -28,12 +29,36 @@ const readOnlyVisibility = '[data-testid="read-only-visibility"]'
 const currencySection = '[data-testid="currency-section"]'
 const missingSignatureInfo = '[data-testid="missing-signature-info"]'
 const queuedTxInfo = '[data-testid="queued-tx-info"]'
+const showMoreBtn = '[data-testid="show-more-btn" ]'
+const importBtn = '[data-testid="import-btn"]'
+export const pendingActivationIcon = '[data-testid="pending-activation-icon"]'
 
-export const addedSafesGnosis = ['0x17b3...98C8', '0x11A6...F1BB', '0xB8d7...642A']
+export const addedSafesEth = ['0x8675...a19b']
 export const addedSafesSepolia = ['0x6d0b...6dC1', '0x5912...fFdb', '0x0637...708e', '0xD157...DE9a']
 export const sideBarListItems = ['Home', 'Assets', 'Transactions', 'Address book', 'Apps', 'Settings']
 export const testSafeHeaderDetails = ['2/2', constants.SEPOLIA_TEST_SAFE_13_SHORT]
 const receiveAssetsStr = 'Receive assets'
+
+export function getImportBtn() {
+  return cy.get(importBtn).scrollIntoView().should('be.visible')
+}
+export function clickOnSidebarImportBtn() {
+  cy.get(sidebarSafeContainer).find(sideSafeListItem).last().scrollIntoView()
+
+  getImportBtn().click()
+  modal.verifyModalTitle(modal.modalTitiles.dataImport)
+  file.verifyValidImportInputExists()
+}
+
+export function showAllSafes() {
+  cy.get('body').then(($body) => {
+    if ($body.find(showMoreBtn).length > 0) {
+      cy.get(showMoreBtn).click()
+      cy.wait(500)
+      showAllSafes()
+    }
+  })
+}
 
 export function verifyNetworkIsDisplayed(netwrok) {
   cy.get(sidebarContainer)
@@ -62,18 +87,18 @@ export function verifyQRModalDisplayed() {
 }
 
 export function verifyCopyAddressBtn(data) {
+  cy.wait(1000)
   cy.get(sidebarContainer)
     .should('be.visible')
     .within(() => {
-      cy.get(copyAddressBtn)
-        .click()
-        .then(() =>
-          cy.window().then((win) => {
-            win.navigator.clipboard.readText().then((text) => {
-              expect(text).to.contain(data)
-            })
-          }),
-        )
+      cy.get(copyAddressBtn).click()
+      cy.wait(500).then(() =>
+        cy.window().then((win) => {
+          win.navigator.clipboard.readText().then((text) => {
+            expect(text).to.contain(data)
+          })
+        }),
+      )
     })
 }
 
@@ -104,6 +129,8 @@ export function verifySafeCount(count) {
 
 export function openSidebar() {
   cy.get(openSafesIcon).click()
+  cy.wait(500)
+  showAllSafes()
   main.verifyElementsExist([sidebarSafeContainer])
 }
 
@@ -115,6 +142,7 @@ export function verifySafesByNetwork(netwrok, safes) {
   cy.get(sidebarSafeContainer).within(() => {
     cy.get(chainLogo)
       .contains(netwrok)
+      .parent()
       .next()
       .within(() => {
         main.verifyValuesExist(sideSafeListItem, safes)
@@ -123,7 +151,15 @@ export function verifySafesByNetwork(netwrok, safes) {
 }
 
 function getSafeItemByName(name) {
-  return cy.get(sidebarSafeContainer).find(sideSafeListItem).contains(name).parents('li')
+  return cy
+    .get(sidebarSafeContainer)
+    .find(sideSafeListItem)
+    .contains(name)
+    .parents('span')
+    .parent()
+    .within(() => {
+      cy.get(safeItemOptionsBtn)
+    })
 }
 
 export function verifySafeReadOnlyState(safe) {
@@ -147,7 +183,7 @@ export function renameSafeItem(oldName, newName) {
   clickOnRenameBtn()
   typeSafeName(newName)
 }
-
+//
 export function removeSafeItem(name) {
   clickOnSafeItemOptionsBtn(name)
   clickOnRemoveBtn()
@@ -194,4 +230,8 @@ export function checkCurrencyInHeader(currency) {
   cy.get(sidebarSafeHeader).within(() => {
     cy.get(currencySection).contains(currency)
   })
+}
+
+export function checkSafeAddressInHeader(address) {
+  main.verifyValuesExist(sidebarSafeHeader, address)
 }

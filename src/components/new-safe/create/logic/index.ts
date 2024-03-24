@@ -1,3 +1,4 @@
+import type { SafeVersion } from '@safe-global/safe-core-sdk-types'
 import { type BrowserProvider, type Provider } from 'ethers'
 
 import { getSafeInfo, type SafeInfo, type ChainInfo } from '@safe-global/safe-gateway-typescript-sdk'
@@ -21,7 +22,7 @@ import { showNotification } from '@/store/notificationsSlice'
 import { SafeFactory } from '@safe-global/protocol-kit'
 import type Safe from '@safe-global/protocol-kit'
 import type { DeploySafeProps } from '@safe-global/protocol-kit'
-import { createEthersAdapter } from '@/hooks/coreSDK/safeCoreSDK'
+import { createEthersAdapter, isValidSafeVersion } from '@/hooks/coreSDK/safeCoreSDK'
 
 import { backOff } from 'exponential-backoff'
 import { LATEST_SAFE_VERSION } from '@/config/constants'
@@ -56,13 +57,27 @@ export const getSafeDeployProps = async (
   }
 }
 
+const getSafeFactory = async (
+  ethersProvider: BrowserProvider,
+  safeVersion = LATEST_SAFE_VERSION,
+): Promise<SafeFactory> => {
+  if (!isValidSafeVersion(safeVersion)) {
+    throw new Error('Invalid Safe version')
+  }
+  const ethAdapter = await createEthersAdapter(ethersProvider)
+  const safeFactory = await SafeFactory.create({ ethAdapter, safeVersion })
+  return safeFactory
+}
+
 /**
  * Create a Safe creation transaction via Core SDK and submits it to the wallet
  */
-export const createNewSafe = async (ethersProvider: BrowserProvider, props: DeploySafeProps): Promise<Safe> => {
-  const ethAdapter = await createEthersAdapter(ethersProvider)
-
-  const safeFactory = await SafeFactory.create({ ethAdapter })
+export const createNewSafe = async (
+  ethersProvider: BrowserProvider,
+  props: DeploySafeProps,
+  safeVersion?: SafeVersion,
+): Promise<Safe> => {
+  const safeFactory = await getSafeFactory(ethersProvider, safeVersion)
   return safeFactory.deploySafe(props)
 }
 
@@ -73,9 +88,7 @@ export const computeNewSafeAddress = async (
   ethersProvider: BrowserProvider,
   props: DeploySafeProps,
 ): Promise<string> => {
-  const ethAdapter = await createEthersAdapter(ethersProvider)
-
-  const safeFactory = await SafeFactory.create({ ethAdapter })
+  const safeFactory = await getSafeFactory(ethersProvider)
   return safeFactory.predictSafeAddress(props.safeAccountConfig, props.saltNonce)
 }
 
@@ -221,6 +234,7 @@ export const checkSafeCreationTx = async (
   const TIMEOUT_TIME = 60 * 1000 // 1 minute
 
   try {
+    // TODO: Use the fix from checkSafeActivation to detect cancellation and speed-up txs again
     const receipt = await provider.waitForTransaction(txHash, 1, TIMEOUT_TIME)
 
     /** The receipt should always be non-null as we require 1 confirmation */
@@ -280,10 +294,22 @@ export const getRedirect = (
   return redirectUrl + `${appendChar}safe=${address}`
 }
 
-export const relaySafeCreation = async (chain: ChainInfo, owners: string[], threshold: number, saltNonce: number) => {
-  const readOnlyProxyFactoryContract = await getReadOnlyProxyFactoryContract(chain.chainId, LATEST_SAFE_VERSION)
+export const relaySafeCreation = async (
+  chain: ChainInfo,
+  owners: string[],
+  threshold: number,
+  saltNonce: number,
+  safeVersion?: SafeVersion,
+) => {
+  const readOnlyProxyFactoryContract = await getReadOnlyProxyFactoryContract(
+    chain.chainId,
+    safeVersion ?? LATEST_SAFE_VERSION,
+  )
   const proxyFactoryAddress = await readOnlyProxyFactoryContract.getAddress()
-  const readOnlyFallbackHandlerContract = await getReadOnlyFallbackHandlerContract(chain.chainId, LATEST_SAFE_VERSION)
+  const readOnlyFallbackHandlerContract = await getReadOnlyFallbackHandlerContract(
+    chain.chainId,
+    safeVersion ?? LATEST_SAFE_VERSION,
+  )
   const fallbackHandlerAddress = await readOnlyFallbackHandlerContract.getAddress()
   const readOnlySafeContract = await getReadOnlyGnosisSafeContract(chain)
   const safeContractAddress = await readOnlySafeContract.getAddress()

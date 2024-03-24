@@ -1,3 +1,4 @@
+import CounterfactualHint from '@/features/counterfactual/CounterfactualHint'
 import { Button, SvgIcon, MenuItem, Tooltip, Typography, Divider, Box, Grid, TextField } from '@mui/material'
 import { Controller, FormProvider, useFieldArray, useForm } from 'react-hook-form'
 import type { ReactElement } from 'react'
@@ -12,8 +13,6 @@ import { useSafeSetupHints } from '@/components/new-safe/create/steps/OwnerPolic
 import useSyncSafeCreationStep from '@/components/new-safe/create/useSyncSafeCreationStep'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import layoutCss from '@/components/new-safe/create/styles.module.css'
-import NetworkWarning from '@/components/new-safe/create/NetworkWarning'
-import useIsWrongChain from '@/hooks/useIsWrongChain'
 import { CREATE_SAFE_EVENTS, trackEvent } from '@/services/analytics'
 import OwnerRow from '@/components/new-safe/OwnerRow'
 
@@ -38,7 +37,6 @@ const OwnerPolicyStep = ({
 }: StepRenderProps<NewSafeFormData> & {
   setDynamicHint: (hints: CreateSafeInfoItem | undefined) => void
 }): ReactElement => {
-  const isWrongChain = useIsWrongChain()
   useSyncSafeCreationStep(setStep)
 
   const formMethods = useForm<OwnerPolicyStepForm>({
@@ -66,7 +64,7 @@ const OwnerPolicyStep = ({
     trigger(OwnerPolicyStepFields.owners)
   }
 
-  const isDisabled = isWrongChain || !formState.isValid
+  const isDisabled = !formState.isValid
 
   useSafeSetupHints(threshold, ownerFields.length, setDynamicHint)
 
@@ -90,7 +88,7 @@ const OwnerPolicyStep = ({
   })
 
   return (
-    <form onSubmit={onFormSubmit} id={OWNER_POLICY_STEP_FORM_ID}>
+    <form data-testid="owner-policy-step-form" onSubmit={onFormSubmit} id={OWNER_POLICY_STEP_FORM_ID}>
       <FormProvider {...formMethods}>
         <Box className={layoutCss.row}>
           {ownerFields.map((field, i) => (
@@ -103,18 +101,19 @@ const OwnerPolicyStep = ({
             />
           ))}
           <Button
+            data-testid="add-owner-btn"
             variant="text"
             onClick={() => appendOwner({ name: '', address: '' }, { shouldFocus: true })}
             startIcon={<SvgIcon component={AddIcon} inheritViewBox fontSize="small" />}
             size="large"
           >
-            Add new owner
+            Add new signer
           </Button>
           {/* <Box p={2} mt={3} sx={{ backgroundColor: 'background.main', borderRadius: '8px' }}>
             <Typography variant="subtitle1" fontWeight={700} display="inline-flex" alignItems="center" gap={1}>
-              {'Safe{Wallet}'} mobile owner key (optional){' '}
+              {'Safe{Wallet}'} mobile signer key (optional){' '}
               <Tooltip
-                title="The Safe{Wallet} mobile app allows for the generation of owner keys that you can add to this or an existing Safe Account."
+                title="The Safe{Wallet} mobile app allows for the generation of signer keys that you can add to this or an existing Safe Account."
                 arrow
                 placement="top"
               >
@@ -123,7 +122,7 @@ const OwnerPolicyStep = ({
                 </span>
               </Tooltip>
             </Typography>
-            <Typography variant="body2">Use your mobile phone as an additional owner key</Typography>
+            <Typography variant="body2">Use your mobile phone as an additional signer key</Typography>
           </Box> */}
         </Box>
 
@@ -132,7 +131,7 @@ const OwnerPolicyStep = ({
           <Typography variant="h4" fontWeight={700} display="inline-flex" alignItems="center" gap={1}>
             Threshold
             <Tooltip
-              title="The threshold of a Safe Account specifies how many owners need to confirm a Safe Account transaction before it can be executed."
+              title="The threshold of a Safe Account specifies how many signers need to confirm a Safe Account transaction before it can be executed."
               arrow
               placement="top"
             >
@@ -161,11 +160,11 @@ const OwnerPolicyStep = ({
               />
             </Grid>
             <Grid item>
-              <Typography>out of {ownerFields.length} owner(s)</Typography>
+              <Typography>out of {ownerFields.length} signer(s)</Typography>
             </Grid>
           </Grid>
 
-          {isWrongChain && <NetworkWarning />}
+          {ownerFields.length > 1 && <CounterfactualHint />}
         </Box>
         <Divider />
         <Box className={layoutCss.row}>

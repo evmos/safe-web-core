@@ -1,3 +1,4 @@
+import { extendedSafeInfoBuilder } from '@/tests/builders/safe'
 import { toBeHex } from 'ethers'
 import { useContext } from 'react'
 import type { SafeInfo } from '@safe-global/safe-gateway-typescript-sdk'
@@ -15,22 +16,6 @@ import * as useSafeWalletProvider from '@/services/safe-wallet-provider/useSafeW
 jest.mock('../services/WalletConnectWallet')
 jest.mock('@/services/safe-wallet-provider/useSafeWalletProvider')
 
-jest.mock('@/hooks/safe-apps/useRemoteSafeApps', () => ({
-  useRemoteSafeApps: () => [
-    [
-      {
-        id: 111,
-        url: 'https://apps-portal.safe.global/wallet-connect',
-        name: 'WC App',
-        iconUrl: 'https://test.com/icon.png',
-        description: 'Test App Description',
-      },
-    ],
-    undefined,
-    false,
-  ],
-}))
-
 const TestComponent = () => {
   const { walletConnect, error } = useContext(WalletConnectContext)
   return (
@@ -42,6 +27,14 @@ const TestComponent = () => {
 }
 
 describe('WalletConnectProvider', () => {
+  const extendedSafeInfo = {
+    ...extendedSafeInfoBuilder().build(),
+    address: {
+      value: toBeHex('0x123', 20),
+    },
+    chainId: '5',
+  }
+
   beforeEach(() => {
     jest.resetAllMocks()
     jest.restoreAllMocks()
@@ -59,12 +52,7 @@ describe('WalletConnectProvider', () => {
         initialReduxState: {
           safeInfo: {
             loading: false,
-            data: {
-              address: {
-                value: toBeHex('0x123', 20),
-              },
-              chainId: '5',
-            } as SafeInfo,
+            data: extendedSafeInfo,
           },
         },
       },
@@ -89,12 +77,7 @@ describe('WalletConnectProvider', () => {
         initialReduxState: {
           safeInfo: {
             loading: false,
-            data: {
-              address: {
-                value: toBeHex('0x123', 20),
-              },
-              chainId: '5',
-            } as SafeInfo,
+            data: extendedSafeInfo,
           },
         },
       },
@@ -106,6 +89,14 @@ describe('WalletConnectProvider', () => {
   })
 
   describe('updateSessions', () => {
+    const extendedSafeInfo = {
+      ...extendedSafeInfoBuilder().build(),
+      address: {
+        value: toBeHex('0x123', 20),
+      },
+      chainId: '5',
+    }
+
     const getUpdateSafeInfoComponent = (safeInfo: SafeInfo) => {
       // eslint-disable-next-line react/display-name
       return () => {
@@ -114,7 +105,7 @@ describe('WalletConnectProvider', () => {
           dispatch(
             safeInfoSlice.actions.set({
               loading: false,
-              data: safeInfo,
+              data: { ...extendedSafeInfo, ...safeInfo },
             }),
           )
         }
@@ -141,12 +132,7 @@ describe('WalletConnectProvider', () => {
           initialReduxState: {
             safeInfo: {
               loading: false,
-              data: {
-                address: {
-                  value: toBeHex('0x123', 20),
-                },
-                chainId: '5',
-              } as SafeInfo,
+              data: extendedSafeInfo,
             },
           },
         },
@@ -183,11 +169,12 @@ describe('WalletConnectProvider', () => {
             safeInfo: {
               loading: false,
               data: {
+                ...extendedSafeInfo,
                 address: {
                   value: toBeHex('0x123', 20),
                 },
                 chainId: '5',
-              } as SafeInfo,
+              },
             },
           },
         },
@@ -220,11 +207,12 @@ describe('WalletConnectProvider', () => {
             safeInfo: {
               loading: false,
               data: {
+                ...extendedSafeInfo,
                 address: {
                   value: toBeHex('0x123', 20),
                 },
                 chainId: '5',
-              } as SafeInfo,
+              },
             },
           },
         },
@@ -237,6 +225,14 @@ describe('WalletConnectProvider', () => {
   })
 
   describe('onRequest', () => {
+    const extendedSafeInfo = {
+      ...extendedSafeInfoBuilder().build(),
+      address: {
+        value: toBeHex('0x123', 20),
+      },
+      chainId: '5',
+    }
+
     it('does not continue with the request if there is no matching topic', async () => {
       jest.spyOn(WalletConnectWallet.prototype, 'init').mockImplementation(() => Promise.resolve())
       jest.spyOn(WalletConnectWallet.prototype, 'updateSessions').mockImplementation(() => Promise.resolve())
@@ -261,12 +257,7 @@ describe('WalletConnectProvider', () => {
           initialReduxState: {
             safeInfo: {
               loading: false,
-              data: {
-                address: {
-                  value: toBeHex('0x123', 20),
-                },
-                chainId: '5',
-              } as SafeInfo,
+              data: extendedSafeInfo,
             },
           },
         },
@@ -325,12 +316,7 @@ describe('WalletConnectProvider', () => {
           initialReduxState: {
             safeInfo: {
               loading: false,
-              data: {
-                address: {
-                  value: toBeHex('0x123', 20),
-                },
-                chainId: '5',
-              } as SafeInfo,
+              data: extendedSafeInfo,
             },
           },
         },
@@ -397,12 +383,7 @@ describe('WalletConnectProvider', () => {
           initialReduxState: {
             safeInfo: {
               loading: false,
-              data: {
-                address: {
-                  value: toBeHex('0x123', 20),
-                },
-                chainId: '5',
-              } as SafeInfo,
+              data: extendedSafeInfo,
             },
           },
         },
@@ -429,10 +410,10 @@ describe('WalletConnectProvider', () => {
         1,
         { method: 'fake', params: [] },
         {
-          id: 111,
+          id: 25,
           name: 'name',
           description: 'description',
-          url: 'https://apps-portal.safe.global/wallet-connect',
+          url: 'https://safe-apps.dev.5afe.dev/wallet-connect',
           iconUrl: 'iconUrl',
         },
       )
@@ -477,12 +458,7 @@ describe('WalletConnectProvider', () => {
           initialReduxState: {
             safeInfo: {
               loading: false,
-              data: {
-                address: {
-                  value: toBeHex('0x123', 20),
-                },
-                chainId: '5',
-              } as SafeInfo,
+              data: extendedSafeInfo,
             },
           },
         },

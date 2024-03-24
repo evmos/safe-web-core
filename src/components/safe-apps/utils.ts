@@ -22,7 +22,7 @@ const validateTransaction = (t: BaseTransaction): boolean => {
   return isAddressValid && !!t.data && typeof t.data === 'string'
 }
 
-export const isTxValid = (txs: BaseTransaction[]) => txs.length && txs.every((t) => validateTransaction(t))
+export const isTxValid = (txs: BaseTransaction[]): boolean => txs.length > 0 && txs.every((t) => validateTransaction(t))
 
 export const getInteractionTitle = (value?: string, chain?: ChainInfo) => {
   const { decimals, symbol } = chain!.nativeCurrency
@@ -63,7 +63,7 @@ export const getLegacyChainName = (chainName: string, chainId: string): string =
   return network
 }
 
-export const getEmptySafeApp = (url = ''): SafeAppDataWithPermissions => {
+export const getEmptySafeApp = (url = '', appData?: SafeAppData): SafeAppDataWithPermissions => {
   return {
     id: Math.random(),
     url,
@@ -75,10 +75,11 @@ export const getEmptySafeApp = (url = ''): SafeAppDataWithPermissions => {
       type: SafeAppAccessPolicyTypes.NoRestrictions,
     },
     tags: [],
-    safeAppsPermissions: [],
     features: [],
-    socialProfiles: [],
     developerWebsite: '',
+    socialProfiles: [],
+    ...appData,
+    safeAppsPermissions: [],
   }
 }
 

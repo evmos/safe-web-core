@@ -1,3 +1,4 @@
+import { getTotalFee } from '@/hooks/useGasPrice'
 import type { ReactElement, SyntheticEvent } from 'react'
 import { Accordion, AccordionDetails, AccordionSummary, Skeleton, Typography, Link, Grid } from '@mui/material'
 import type { ChainInfo } from '@safe-global/safe-gateway-typescript-sdk'
@@ -51,8 +52,9 @@ export const _GasParams = ({
   const isError = gasLimitError && !gasLimit
 
   // Total gas cost
-  // TODO: Check how to use getTotalFee here
-  const totalFee = !isLoading ? formatVisualAmount(maxFeePerGas * gasLimit, chain?.nativeCurrency.decimals) : '> 0.001'
+  const totalFee = !isLoading
+    ? formatVisualAmount(getTotalFee(maxFeePerGas, gasLimit), chain?.nativeCurrency.decimals)
+    : '> 0.001'
 
   // Individual gas params
   const gasLimitString = gasLimit?.toString() || ''
@@ -97,7 +99,7 @@ export const _GasParams = ({
           <GasDetail isLoading={false} name="Safe Account transaction nonce" value={nonce.toString()} />
         )}
 
-        {!!safeTxGas && <GasDetail isLoading={false} name="safeTxGas" value={safeTxGas.toString()} />}
+        {safeTxGas !== undefined && <GasDetail isLoading={false} name="safeTxGas" value={safeTxGas.toString()} />}
 
         {isExecution && (
           <>
