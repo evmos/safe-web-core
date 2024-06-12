@@ -1,7 +1,8 @@
-import * as constants from '../../support/constants'
-import * as safeapps from '../pages/safeapps.pages'
-import * as main from '../pages/main.page'
-import * as createtx from '../../e2e/pages/create_tx.pages'
+import * as constants from '../../support/constants.js'
+import * as safeapps from './safeapps.pages.js'
+import * as main from './main.page.js'
+import * as createtx from './create_tx.pages.js'
+import staticSafes from '../../fixtures/safes/static.json'
 
 const connectAndTransactStr = 'Connect & transact'
 const transactionQueueStr = 'Pending transactions'
@@ -97,6 +98,7 @@ export function verifyShareBtnWorks(index, data) {
   cy.get(copyShareBtn)
     .eq(index)
     .click()
+    .wait(1000)
     .then(() =>
       cy.window().then((win) => {
         win.navigator.clipboard.readText().then((text) => {
@@ -136,7 +138,7 @@ export function verifyTxQueueWidget() {
     ).should('exist')
 
     cy.contains(
-      `a[href="${constants.transactionQueueUrl}${encodeURIComponent(constants.SEPOLIA_TEST_SAFE_5)}"]`,
+      `a[href="${constants.transactionQueueUrl}${encodeURIComponent(staticSafes.SEP_STATIC_SAFE_2)}"]`,
       viewAllStr,
     )
   })
@@ -153,7 +155,7 @@ export function verifyFeaturedAppsSection() {
     cy.get(txBuilder).should('exist')
 
     // Featured apps have a Safe-specific link
-    cy.get(safeSpecificLink).should('have.length', 2)
+    cy.get(safeSpecificLink).should('have.length', 1)
   })
 }
 

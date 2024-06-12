@@ -16,12 +16,13 @@ export const transactionItem = '[data-testid="transaction-item"]'
 export const connectedWalletExecMethod = '[data-testid="connected-wallet-execution-method"]'
 const addToBatchBtn = '[data-track="batching: Add to batch"]'
 const accordionDetails = '[data-testid="accordion-details"]'
+const accordionMessageDetails = '[data-testid="accordion-msg-details"]'
 const copyIcon = '[data-testid="copy-btn-icon"]'
 const transactionSideList = '[data-testid="transaction-actions-list"]'
 const confirmationVisibilityBtn = '[data-testid="confirmation-visibility-btn"]'
 const expandAllBtn = '[data-testid="expande-all-btn"]'
 const collapseAllBtn = '[data-testid="collapse-all-btn"]'
-const txRowTitle = '[data-testid="tx-row-title"]'
+export const txRowTitle = '[data-testid="tx-row-title"]'
 const advancedDetails = '[data-testid="tx-advanced-details"]'
 const baseGas = '[data-testid="tx-bas-gas"]'
 const requiredConfirmation = '[data-testid="required-confirmations"]'
@@ -29,6 +30,8 @@ export const txDate = '[data-testid="tx-date"]'
 const spamTokenWarningIcon = '[data-testid="warning"]'
 const untrustedTokenWarningModal = '[data-testid="untrusted-token-warning"]'
 const sendTokensBtn = '[data-testid="send-tokens-btn"]'
+export const replacementNewSigner = '[data-testid="new-owner"]'
+const messageItem = '[data-testid="message-item"]'
 
 const viewTransactionBtn = 'View transaction'
 const transactionDetailsTitle = 'Transaction details'
@@ -48,6 +51,7 @@ const noLaterStr = 'No, later'
 const signBtnStr = 'Sign'
 const expandAllBtnStr = 'Expand all'
 const collapseAllBtnStr = 'Collapse all'
+export const messageNestedStr = `"nestedString": "Test message 3 off-chain"`
 
 export function clickOnSendTokensBtn() {
   cy.get(sendTokensBtn).click()
@@ -90,6 +94,7 @@ export function verifyCopyIconWorks(index, data) {
     .parent()
     .eq(index)
     .trigger('click')
+    .wait(1000)
     .then(() =>
       cy.window().then((win) => {
         win.navigator.clipboard.readText().then((text) => {
@@ -124,6 +129,14 @@ export function clickOnTransactionItemByName(name, token) {
         $elements = $elements.filter(':contains("' + token + '")')
       }
       cy.wrap($elements.first()).click({ force: true })
+    })
+}
+
+export function clickOnTransactionItemByIndex(index) {
+  cy.get(messageItem)
+    .eq(index)
+    .then(($elements) => {
+      cy.wrap($elements).click({ force: true })
     })
 }
 
@@ -207,6 +220,23 @@ export function verifySummaryByName(name, token, data, alt, altToken) {
           if (altToken) cy.wrap($element).find('img').eq(1).should('have.attr', 'alt', alt).should('be.visible')
         })
       }
+    })
+}
+
+export function verifySummaryByIndex(index, data, alt) {
+  cy.get(messageItem)
+    .eq(index)
+    .then(($elements) => {
+      cy.wrap($elements).then(($element) => {
+        if (Array.isArray(data)) {
+          data.forEach((text) => {
+            cy.wrap($element).contains(text).should('be.visible')
+          })
+        } else {
+          cy.wrap($element).contains(data).should('be.visible')
+        }
+        if (alt) cy.wrap($element).find('img').eq(0).should('have.attr', 'alt', alt).should('be.visible')
+      })
     })
 }
 
@@ -407,4 +437,8 @@ export function verifyTxDestinationAddress(receivedAddress) {
   cy.get(receivedAddress).then((address) => {
     cy.contains(address).should('exist')
   })
+}
+
+export function verifyReplacedSigner(newSignerName) {
+  cy.get(replacementNewSigner).should('exist').contains(newSignerName)
 }

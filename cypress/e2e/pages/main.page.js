@@ -21,6 +21,112 @@ export function waitForHistoryCallToComplete() {
   cy.wait('@History')
 }
 
+export const fetchSafeData = (safeAddress) => {
+  return cy
+    .request({
+      method: 'GET',
+      url: `${constants.stagingTxServiceUrl}/v1${constants.stagingTxServiceSafesUrl}${safeAddress}`,
+      headers: {
+        accept: 'application/json',
+      },
+    })
+    .then((response) => {
+      expect(response.status).to.eq(200)
+    })
+}
+
+export const getSafeBalance = (safeAddress, chain) => {
+  return cy
+    .request({
+      method: 'GET',
+      url: `${constants.stagingCGWUrlv1}${constants.stagingCGWChains}${chain}${constants.stagingCGWSafes}${safeAddress}${constants.stagingCGWAllTokensBalances}`,
+      headers: {
+        accept: 'application/json',
+      },
+    })
+    .then((response) => {
+      expect(response.status).to.eq(200)
+    })
+}
+
+export const getSafeNFTs = (safeAddress, chain) => {
+  return cy
+    .request({
+      method: 'GET',
+      url: `${constants.stagingCGWUrlv2}${constants.stagingCGWChains}${chain}${constants.stagingCGWSafes}${safeAddress}${constants.stagingCGWCollectibles}`,
+      headers: {
+        accept: 'application/json',
+      },
+    })
+    .then((response) => {
+      expect(response.status).to.eq(200)
+      return response
+    })
+}
+
+export const getSafeNonce = (safeAddress, chain) => {
+  return cy
+    .request({
+      method: 'GET',
+      url: `${constants.stagingCGWUrlv1}${constants.stagingCGWChains}${chain}${constants.stagingCGWSafes}${safeAddress}${constants.stagingCGWNone}`,
+      headers: {
+        accept: 'application/json',
+      },
+    })
+    .then((response) => {
+      expect(response.status).to.eq(200)
+    })
+}
+
+export function fetchCurrentNonce(safeAddress) {
+  return getSafeNonce(safeAddress.substring(4), constants.networkKeys.sepolia).then(
+    (response) => response.body.currentNonce,
+  )
+}
+
+export function verifyNonceChange(safeAddress, expectedNonce) {
+  fetchCurrentNonce(safeAddress).then((newNonce) => {
+    expect(newNonce).to.equal(expectedNonce)
+  })
+}
+
+export function checkTokenBalance(safeAddress, tokenSymbol, expectedBalance) {
+  getSafeBalance(safeAddress.substring(4), constants.networkKeys.sepolia).then((response) => {
+    const targetToken = response.body.items.find((token) => token.tokenInfo.symbol === tokenSymbol)
+    console.log(targetToken)
+    expect(targetToken.balance).to.include(expectedBalance)
+  })
+}
+
+export function checkNFTBalance(safeAddress, tokenSymbol, expectedBalance) {
+  getSafeNFTs(safeAddress.substring(4), constants.networkKeys.sepolia).then((response) => {
+    const targetToken = response.body.results.find((token) => token.tokenSymbol === tokenSymbol)
+    expect(targetToken.tokenName).to.equal(expectedBalance)
+  })
+}
+
+export function checkTokenBalanceIsNull(safeAddress, tokenSymbol) {
+  let pollCount = 0
+
+  function poll() {
+    getSafeNFTs(safeAddress.substring(4), constants.networkKeys.sepolia).then((response) => {
+      const targetToken = response.body.results.find((token) => token.tokenSymbol === tokenSymbol)
+      if (targetToken === undefined) {
+        console.log('Token is undefined as expected. Stopping polling.')
+        return true
+      } else if (pollCount < 9) {
+        pollCount++
+        console.log('Token is not undefined, retrying...')
+        cy.wait(1000)
+        poll()
+      } else {
+        throw new Error('Failed to validate token status -undefined- within the allowed polling attempts.')
+      }
+    })
+  }
+  cy.wrap(null).then(poll).should('be.true')
+}
+
 export function acceptCookies(index = 0) {
   cy.wait(1000)
 
@@ -187,4 +293,10 @@ export function formatAddressInCaps(address) {
 
 export function getElementText(element) {
   return cy.get(element).invoke('text')
+}
+
+export function verifyTextVisibility(stringsArray) {
+  stringsArray.forEach((string) => {
+    cy.contains(string).should('be.visible')
+  })
 }

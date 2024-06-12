@@ -1,3 +1,4 @@
+import MockDate from 'mockdate'
 import {
   getIncomingTransfers,
   getMultisigTransactions,
@@ -18,6 +19,8 @@ import {
 import { renderHook } from '@/tests/test-utils'
 import type { NextRouter } from 'next/router'
 import { type TxFilterFormState } from '@/components/transactions/TxFilterForm'
+
+MockDate.set('2021-01-01T00:00:00.000Z')
 
 jest.mock('@safe-global/safe-gateway-typescript-sdk', () => ({
   getIncomingTransfers: jest.fn(() => Promise.resolve({ results: [] })),
@@ -380,7 +383,13 @@ describe('tx-history-filter', () => {
     })
 
     it('should get incoming transfers relevant to `type`', () => {
-      fetchFilteredTxHistory('4', '0x123', { type: 'Incoming' as TxFilterType, filter: { value: '123' } }, 'pageUrl1')
+      fetchFilteredTxHistory(
+        '4',
+        '0x123',
+        { type: 'Incoming' as TxFilterType, filter: { value: '123' } },
+        false,
+        'pageUrl1',
+      )
 
       expect(getIncomingTransfers).toHaveBeenCalledWith(
         '4',
@@ -401,6 +410,7 @@ describe('tx-history-filter', () => {
           type: 'Outgoing' as TxFilterType,
           filter: { execution_date__gte: '1970-01-01T00:00:00.000Z', executed: 'true' },
         },
+        false,
         'pageUrl2',
       )
 
@@ -425,6 +435,7 @@ describe('tx-history-filter', () => {
         '1',
         '0x789',
         { type: 'Module-based' as TxFilterType, filter: { to: '0x123' } },
+        false,
         'pageUrl3',
       )
 
@@ -447,6 +458,7 @@ describe('tx-history-filter', () => {
           type: 'Test' as TxFilterType,
           filter: { token_address: '0x123' },
         },
+        false,
         'pageUrl3',
       )
 

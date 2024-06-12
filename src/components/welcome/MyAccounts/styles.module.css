@@ -35,30 +35,44 @@
   padding-top: 0;
   padding-bottom: 0;
   padding-left: 0;
+  flex-wrap: wrap;
 }
 
 .currentListItem {
   border: 1px solid var(--color-secondary-light);
   border-left-width: 6px;
-  background-color: var(--color-secondary-background) !important;
+  background-color: var(--color-background-light) !important;
 }
 
-.listItem> :first-child {
+.listItem > :first-child {
   flex: 1;
   width: 90%;
 }
 
 .safeLink {
-  display: flex;
-  align-items: center;
+  display: grid;
   padding: var(--space-2) var(--space-1) var(--space-2) var(--space-2);
+  grid-template-columns: auto 3fr 2fr auto;
+  align-items: center;
+}
+
+@media (max-width: 599.95px) {
+  .safeLink {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'a b d'
+      'a c d';
+  }
+
+  .safeLink :nth-child(1) { grid-area: a; }
+  .safeLink :nth-child(2) { grid-area: b; }
+  .safeLink :nth-child(3) { grid-area: c; }
+  .safeLink :nth-child(4) { grid-area: d; }
 }
 
 .safeAddress {
   white-space: nowrap;
-  padding-left: var(--space-2);
   overflow: hidden;
-  margin-right: 10px;
   text-overflow: ellipsis;
 }
 
@@ -95,6 +109,20 @@
   height: 1rem;
   margin: 4px;
   color: var(--color-text-secondary);
+}
+
+.chip {
+  border-radius: 4px;
+  background-color: var(--color-warning-background);
+  margin-top: 4px;
+}
+
+.pendingAccount {
+  background-color: var(--color-info-light);
+}
+
+.pendingLoopIcon {
+  color: var(--color-info-dark) !important;
 }
 
 @media (max-width: 899.95px) {

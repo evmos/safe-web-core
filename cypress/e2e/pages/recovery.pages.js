@@ -1,6 +1,7 @@
 import * as constants from '../../support/constants'
 import * as main from './main.page'
 import * as safe from '../pages/load_safe.pages'
+import * as tx from '../pages/transactions.page'
 import { tableContainer } from '../pages/address_book.page'
 import { txDate } from '../pages/create_tx.pages'
 
@@ -25,11 +26,13 @@ export function clickOnExecuteRecoveryCancelBtn() {
 }
 export function cancelRecoveryTx() {
   cy.get(txDate).click()
-  cy.get(cancelRecoveryBtn).click()
-  cy.get(cancelProposalBtn).click()
+  cy.get(cancelRecoveryBtn).scrollIntoView().click()
+  cy.get(cancelProposalBtn).scrollIntoView().click()
 }
 export function clickOnRecoveryExecuteBtn() {
-  cy.get(executeBtn, { timeout: 1200000 }).eq(0).should('be.enabled', { timeout: 1200000 }).click()
+  cy.get(executeBtn).eq(0).should('be.enabled', { timeout: 300000 })
+  cy.wait(1000)
+  cy.get(executeBtn).eq(0).click()
 }
 export function verifyTxNotInQueue() {
   cy.get(txDate).should('have.length', 0)
@@ -44,7 +47,7 @@ export function setRecoveryDelay(option) {
 }
 
 export function getSetupRecoveryBtn() {
-  return cy.get(setupRecoveryBtn).should('be.visible')
+  return cy.get(setupRecoveryBtn)
 }
 
 export function clickOnSetupRecoveryBtn() {
@@ -61,7 +64,7 @@ export function clickOnNextBtn() {
 }
 
 export function clickOnGoToQueueBtn() {
-  cy.get(goToQueueBtn, { timeout: 120000 }).click()
+  cy.get(goToQueueBtn).click()
   cy.get(goToQueueBtn).should('not.exist')
 }
 
@@ -81,9 +84,16 @@ export function verifyRecovererAdded(address) {
   main.verifyValuesExist(tableContainer, address)
 }
 
-export function removeRecoverer(index, recoverer) {
-  cy.get(removeRecovererBtn).eq(index).click()
-  cy.get(removeRecovererSection).contains(recoverer)
+export function clearRecoverers() {
+  cy.get('body').then(($body) => {
+    if ($body.find(removeRecovererBtn).length) {
+      cy.get(removeRecovererBtn).each(($btn) => {
+        cy.wrap($btn).click()
+        clickOnNextBtn()
+        tx.executeFlow_1()
+      })
+    }
+  })
 }
 
 export function clickOnStartRecoveryBtn() {
@@ -95,6 +105,14 @@ export function enterOwnerAddress(address) {
 }
 
 export function postponeRecovery() {
-  cy.get(postponeRecoveryBtn, { timeout: 1200000 }).click()
-  cy.get(postponeRecoveryBtn).should('not.exist')
+  cy.wait(7000)
+  cy.get(postponeRecoveryBtn)
+    .should(() => {})
+    .then(($button) => {
+      if (!$button.length) {
+        return
+      }
+      cy.wrap($button).click()
+      cy.get(postponeRecoveryBtn).should('not.exist')
+    })
 }

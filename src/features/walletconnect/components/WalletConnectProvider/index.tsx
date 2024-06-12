@@ -16,6 +16,13 @@ enum Errors {
   WRONG_CHAIN = '%%dappName%% made a request on a different chain than the one you are connected to',
 }
 
+export enum WCLoadingState {
+  APPROVE = 'Approve',
+  REJECT = 'Reject',
+  CONNECT = 'Connect',
+  DISCONNECT = 'Disconnect',
+}
+
 const WalletConnectSafeApp = IS_PRODUCTION ? WC_APP_PROD : WC_APP_DEV
 
 const walletConnectSingleton = new WalletConnectWallet()
@@ -34,6 +41,7 @@ export const WalletConnectProvider = ({ children }: { children: ReactNode }) => 
   const open = wcPopupStore.useStore() ?? false
   const setOpen = wcPopupStore.setStore
   const [error, setError] = useState<Error | null>(null)
+  const [isLoading, setIsLoading] = useState<WCLoadingState>()
   const safeWalletProvider = useSafeWalletProvider()
 
   // Init WalletConnect
@@ -102,7 +110,7 @@ export const WalletConnectProvider = ({ children }: { children: ReactNode }) => 
   }, [walletConnect, chainId, safeWalletProvider])
 
   return (
-    <WalletConnectContext.Provider value={{ walletConnect, error, setError, open, setOpen }}>
+    <WalletConnectContext.Provider value={{ walletConnect, error, setError, open, setOpen, isLoading, setIsLoading }}>
       {children}
     </WalletConnectContext.Provider>
   )

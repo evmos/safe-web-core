@@ -18,6 +18,7 @@ enum ErrorCodes {
   _304 = '304: Error enabling MFA',
   _305 = '305: Error exporting account key',
   _306 = '306: Error logging in',
+  _307 = '307: Error attempted new account creation',
 
   _400 = '400: Error requesting browser notification permissions',
   _401 = '401: Error tracking push notifications',
@@ -64,6 +65,7 @@ enum ErrorCodes {
   _811 = '811: Error decoding a recovery proposal transaction',
   _812 = '812: Failed to recover',
   _813 = '813: Failed to cancel recovery',
+  _814 = '814: Failed to speed up transaction',
 
   _900 = '900: Error loading Safe App',
   _901 = '901: Error processing Safe Apps SDK request',

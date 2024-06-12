@@ -5,6 +5,8 @@ import { WALLET_KEYS } from '@/hooks/wallets/consts'
 import memoize from 'lodash/memoize'
 import { ONBOARD_MPC_MODULE_LABEL } from '@/services/mpc/SocialLoginModule'
 
+const WALLETCONNECT = 'WalletConnect'
+
 const isWCRejection = (err: Error): boolean => {
   return /rejected/.test(err?.message)
 }
@@ -19,6 +21,10 @@ export const isWalletRejection = (err: EthersError | Error): boolean => {
 
 export const isLedger = (wallet: ConnectedWallet): boolean => {
   return wallet.label.toUpperCase() === WALLET_KEYS.LEDGER
+}
+
+export const isWalletConnect = (wallet: ConnectedWallet): boolean => {
+  return wallet.label.toLowerCase().startsWith(WALLETCONNECT.toLowerCase())
 }
 
 export const isHardwareWallet = (wallet: ConnectedWallet): boolean => {
@@ -42,10 +48,10 @@ export const isSmartContractWallet = memoize(
 
 /* Check if the wallet is unlocked. */
 export const isWalletUnlocked = async (walletName: string): Promise<boolean | undefined> => {
-  const METAMASK = 'MetaMask'
+  const METAMASK_LIKE = ['MetaMask', 'Rabby Wallet', 'Zerion']
 
   // Only MetaMask exposes a method to check if the wallet is unlocked
-  if (walletName === METAMASK) {
+  if (METAMASK_LIKE.includes(walletName)) {
     if (typeof window === 'undefined' || !window.ethereum?._metamask) return false
     try {
       return await window.ethereum?._metamask.isUnlocked()

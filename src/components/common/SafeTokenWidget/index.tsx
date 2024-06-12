@@ -1,4 +1,4 @@
-import { IS_PRODUCTION, SAFE_TOKEN_ADDRESSES } from '@/config/constants'
+import { IS_PRODUCTION, SAFE_TOKEN_ADDRESSES, SAFE_LOCKING_ADDRESS } from '@/config/constants'
 import { AppRoutes } from '@/config/routes'
 import useChainId from '@/hooks/useChainId'
 import useSafeTokenAllocation, { useSafeVotingPower, type Vesting } from '@/hooks/useSafeTokenAllocation'
@@ -24,6 +24,10 @@ export const getSafeTokenAddress = (chainId: string): string | undefined => {
   return SAFE_TOKEN_ADDRESSES[chainId]
 }
 
+export const getSafeLockingAddress = (chainId: string): string | undefined => {
+  return SAFE_LOCKING_ADDRESS[chainId]
+}
+
 const canRedeemSep5Airdrop = (allocation?: Vesting[]): boolean => {
   const sep5Allocation = allocation?.find(({ tag }) => tag === 'user_v2')
 
@@ -34,7 +38,7 @@ const canRedeemSep5Airdrop = (allocation?: Vesting[]): boolean => {
   return !sep5Allocation.isRedeemed && !sep5Allocation.isExpired
 }
 
-const GOVERNANCE_APP_URL = IS_PRODUCTION ? 'https://governance.safe.global' : 'https://safe-dao-governance.dev.5afe.dev'
+const GOVERNANCE_APP_URL = IS_PRODUCTION ? 'https://community.safe.global' : 'https://safe-dao-governance.dev.5afe.dev'
 
 const SafeTokenWidget = () => {
   const chainId = useChainId()

@@ -16,6 +16,8 @@ export type ApprovalInfo = {
   amount: any
   amountFormatted: string
   method: Approval['method']
+  /** Index of approval transaction within (batch) transaction */
+  transactionIndex: number
 }
 
 const ApprovalModuleInstance = new ApprovalModule()
@@ -56,7 +58,7 @@ export const useApprovalInfos = (payload: {
               ? PSEUDO_APPROVAL_VALUES.UNLIMITED
               : formatUnits(approval.amount, tokenInfo?.decimals)
 
-          return { ...approval, tokenInfo: tokenInfo, amountFormatted }
+          return { ...approval, tokenInfo, amountFormatted }
         }),
       )
     },

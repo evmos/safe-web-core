@@ -52,7 +52,6 @@ export const BlockedBridges = [
   'bridge.zora.energy',
   'bridge.mantle.xyz',
   'bridge.metis.io',
-  'scroll.io',
   'pacific-bridge.manta.network',
   'tokenbridge.rsk.co',
   'canto.io',
@@ -65,6 +64,7 @@ export const BlockedBridges = [
 
 // Bridges that initially select the same address on the destination chain but allow changing it
 export const WarnedBridges = [
+  'core.app',
   'across.to', // doesn't send their URL in the session proposal
   'app.allbridge.io',
   'bridge.arbitrum.io',
@@ -89,6 +89,7 @@ export const WarnedBridges = [
   'portal.txsync.io',
   'bridge.wanchain.org',
   'app.xy.finance',
+  'scroll.io',
 ]
 
 export const WarnedBridgeNames = ['Across Bridge', 'Hop']

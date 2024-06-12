@@ -1,7 +1,6 @@
-import AddressInputReadOnly from '@/components/common/AddressInputReadOnly'
 import { type ReactElement, useState, useMemo } from 'react'
-import { Controller, get, useFormContext, useWatch } from 'react-hook-form'
-import { Box, SvgIcon, Typography } from '@mui/material'
+import { Controller, useFormContext, useWatch } from 'react-hook-form'
+import { SvgIcon, Typography } from '@mui/material'
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete'
 import useAddressBook from '@/hooks/useAddressBook'
 import AddressInput, { type AddressInputProps } from '../AddressInput'
@@ -11,6 +10,7 @@ import EntryDialog from '@/components/address-book/EntryDialog'
 import css from './styles.module.css'
 import inputCss from '@/styles/inputs.module.css'
 import { isValidAddress } from '@/utils/validation'
+import { sameAddress } from '@/utils/addresses'
 
 const abFilterOptions = createFilterOptions({
   stringify: (option: { label: string; name: string }) => option.name + ' ' + option.label,
@@ -21,7 +21,7 @@ const abFilterOptions = createFilterOptions({
  */
 const AddressBookInput = ({ name, canAdd, ...props }: AddressInputProps & { canAdd?: boolean }): ReactElement => {
   const addressBook = useAddressBook()
-  const { setValue, control, formState } = useFormContext()
+  const { setValue, control } = useFormContext()
   const addressValue = useWatch({ name, control })
   const [open, setOpen] = useState(false)
   const [openAddressBook, setOpenAddressBook] = useState<boolean>(false)
@@ -33,6 +33,11 @@ const AddressBookInput = ({ name, canAdd, ...props }: AddressInputProps & { canA
 
   const hasVisibleOptions = useMemo(
     () => !!addressBookEntries.filter((entry) => entry.label.includes(addressValue)).length,
+    [addressBookEntries, addressValue],
+  )
+
+  const isInAddressBook = useMemo(
+    () => addressBookEntries.some((entry) => sameAddress(entry.label, addressValue)),
     [addressBookEntries, addressValue],
   )
 
@@ -51,20 +56,6 @@ const AddressBookInput = ({ name, canAdd, ...props }: AddressInputProps & { canA
         setOpenAddressBook(true)
       }
     : undefined
-
-  if (addressBook[addressValue]) {
-    const fieldError = get(formState.errors, name)
-
-    return (
-      <Box data-testid="address-book-recipient" onClick={() => setValue(name, '')}>
-        <AddressInputReadOnly
-          address={addressValue}
-          label={fieldError?.message || (typeof props.label === 'string' ? props.label : 'Sending to')}
-          error={!!fieldError}
-        />
-      </Box>
-    )
-  }
 
   return (
     <>
@@ -109,7 +100,7 @@ const AddressBookInput = ({ name, canAdd, ...props }: AddressInputProps & { canA
         )}
       />
 
-      {canAdd ? (
+      {canAdd && !isInAddressBook ? (
         <Typography variant="body2" className={css.unknownAddress}>
           <SvgIcon component={InfoIcon} fontSize="small" />
           <span>
