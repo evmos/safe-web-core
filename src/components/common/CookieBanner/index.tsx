@@ -94,7 +94,7 @@ export const CookieBanner = ({
                   <Typography variant="body2">New features and product announcements</Typography>
                 </Box> */}
 
-                <Box>
+                {/* <Box>
                   <CookieCheckbox
                     checkboxProps={{ ...register(CookieType.ANALYTICS), id: 'ga' }}
                     label="Analytics"
@@ -104,7 +104,7 @@ export const CookieBanner = ({
                   <Typography variant="body2">
                     Opt in for Google Analytics cookies to help us analyze app usage patterns.
                   </Typography>
-                </Box>
+                </Box> */}
               </Grid>
             </Grid>
 
