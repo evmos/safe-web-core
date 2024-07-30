@@ -7,9 +7,11 @@ import SafeApiKit from '@safe-global/api-kit'
 import { createEthersAdapter, createSigners } from '../../support/api/utils_ether'
 import { createSafes } from '../../support/api/utils_protocolkit'
 import { getSafes, CATEGORIES } from '../../support/safes/safesHandler.js'
+import * as wallet from '../../support/utils/wallet.js'
 
 const walletCredentials = JSON.parse(Cypress.env('CYPRESS_WALLET_CREDENTIALS'))
 const receiver = walletCredentials.OWNER_2_WALLET_ADDRESS
+const signer = walletCredentials.OWNER_4_PRIVATE_KEY
 
 const tokenAmount = '0.0001'
 const netwrok = 'sepolia'
@@ -46,6 +48,7 @@ function visit(url) {
 
 function executeTransactionFlow(fromSafe) {
   visit(constants.transactionQueueUrl + fromSafe)
+  wallet.connectSigner(signer)
   assets.clickOnConfirmBtn(0)
   tx.executeFlow_1()
   cy.wait(5000)
@@ -78,41 +81,46 @@ describe('Send funds from queue happy path tests 1', () => {
     protocolKitOwner2_S3 = safes[3]
   })
 
-  it('Verify confirmation and execution of native token queued tx by second signer with connected wallet', () => {
-    cy.wrap(null)
-      .then(() => {
-        return main.fetchCurrentNonce(network_pref + existingSafeAddress1)
-      })
-      .then(async (currentNonce) => {
-        const amount = ethers.parseUnits(tokenAmount, unit_eth).toString()
-        const safeTransactionData = {
-          to: receiver,
-          data: '0x',
-          value: amount.toString(),
-        }
-
-        const safeTransaction = await protocolKitOwnerS1.createTransaction({ transactions: [safeTransactionData] })
-        const safeTxHash = await protocolKitOwnerS1.getTransactionHash(safeTransaction)
-        const senderSignature = await protocolKitOwnerS1.signHash(safeTxHash)
-        const safeAddress = existingSafeAddress1
-
-        await apiKit.proposeTransaction({
-          safeAddress,
-          safeTransactionData: safeTransaction.data,
-          safeTxHash,
-          senderAddress: await owner1Signer.getAddress(),
-          senderSignature: senderSignature.data,
+  it(
+    'Verify confirmation and execution of native token queued tx by second signer with connected wallet',
+    { defaultCommandTimeout: 300000 },
+    () => {
+      cy.wrap(null)
+        .then(() => {
+          return main.fetchCurrentNonce(network_pref + existingSafeAddress1)
         })
+        .then(async (currentNonce) => {
+          const amount = ethers.parseUnits(tokenAmount, unit_eth).toString()
+          const safeTransactionData = {
+            to: receiver,
+            data: '0x',
+            value: amount.toString(),
+          }
 
-        executeTransactionFlow(safeAddress)
-        cy.wait(5000)
-        main.verifyNonceChange(network_pref + safeAddress, currentNonce + 1)
-      })
-  })
+          const safeTransaction = await protocolKitOwnerS1.createTransaction({ transactions: [safeTransactionData] })
+          const safeTxHash = await protocolKitOwnerS1.getTransactionHash(safeTransaction)
+          const senderSignature = await protocolKitOwnerS1.signHash(safeTxHash)
+          const safeAddress = existingSafeAddress1
+
+          await apiKit.proposeTransaction({
+            safeAddress,
+            safeTransactionData: safeTransaction.data,
+            safeTxHash,
+            senderAddress: await owner1Signer.getAddress(),
+            senderSignature: senderSignature.data,
+          })
+
+          executeTransactionFlow(safeAddress)
+          cy.wait(5000)
+          main.verifyNonceChange(network_pref + safeAddress, currentNonce + 1)
+        })
+    },
+  )
 
   it.skip('Verify confirmation and execution of native token queued tx by second signer with relayer', () => {
     function executeTransactionFlow(fromSafe) {
       visit(constants.transactionQueueUrl + fromSafe)
+      wallet.connectSigner(signer)
       assets.clickOnConfirmBtn(0)
       tx.executeFlow_2()
       cy.wait(5000)
@@ -148,9 +156,10 @@ describe('Send funds from queue happy path tests 1', () => {
       })
   })
 
-  it('Verify 1 signer can execute a tx confirmed by 2 signers', () => {
+  it('Verify 1 signer can execute a tx confirmed by 2 signers', { defaultCommandTimeout: 300000 }, () => {
     function executeTransaction(fromSafe) {
       visit(constants.transactionQueueUrl + fromSafe)
+      wallet.connectSigner(signer)
       assets.clickOnExecuteBtn(0)
       tx.executeFlow_3()
       cy.wait(5000)

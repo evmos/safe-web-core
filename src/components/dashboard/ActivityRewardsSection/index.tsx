@@ -51,7 +51,7 @@ const ActivityRewardsSection = () => {
   }
 
   return (
-    <Grid item xs={12}>
+    <>
       <Card className={css.widgetWrapper}>
         <SvgIcon
           component={Asterix}
@@ -66,7 +66,7 @@ const ActivityRewardsSection = () => {
             display: { xs: 'none', sm: 'block' },
           }}
         />
-        <Grid container xs={12} sx={{ gap: { xs: 4, lg: 0 } }}>
+        <Grid container item xs={12} sx={{ gap: { xs: 4, lg: 0 } }}>
           <Grid item xs={12} lg={6} p={0}>
             <SvgIcon
               component={SafePass}
@@ -84,26 +84,26 @@ const ActivityRewardsSection = () => {
             </Typography>
             <Box className={css.links} gap={2}>
               <NextLink href={appUrl} passHref rel="noreferrer" onClick={onClick}>
-                <Button variant="contained">{'Get Safe{Pass}'}</Button>
+                <Button variant="contained">{'Open Safe{Pass}'}</Button>
               </NextLink>
               <NextLink href="https://safe.global/pass" target="_blank" passHref rel="noreferrer" onClick={onClick}>
-                <Button variant="outlined">Learn more</Button>
+                <Button variant="text">Learn more</Button>
               </NextLink>
             </Box>
           </Grid>
-          <Grid item xs={12} lg={6} p={0}>
+          <Grid item xs={12} lg={6} p={0} zIndex={2}>
             <Typography variant="overline" color="primary.light">
               How it works
             </Typography>
             <div className={css.steps}>
-              <Step title="Lock SAFE to boost your points!" active={true} />
-              <Step title="Get activity points" active={false} />
+              <Step title="Lock SAFE to boost your points!" active />
+              <Step title="Get activity points" active />
               <Step title="Receive rewards" active={false} />
             </div>
           </Grid>
         </Grid>
       </Card>
-    </Grid>
+    </>
   )
 }
 

@@ -1,4 +1,3 @@
-import * as constants from '../../support/constants'
 import * as main from '../pages/main.page'
 import { connectedWalletExecMethod } from '../pages/create_tx.pages'
 import * as sidebar from '../pages/sidebar.pages'
@@ -12,8 +11,7 @@ const thresholdInput = 'input[name="threshold"]'
 export const removeOwnerBtn = 'button[aria-label="Remove signer"]'
 const connectingContainer = 'div[class*="connecting-container"]'
 const createNewSafeBtn = '[data-testid="create-safe-btn"]'
-const connectWalletBtn = 'Connect wallet'
-const continueWithWalletBtn = 'Continue with E2E Wallet'
+const continueWithWalletBtn = 'Continue with Private key'
 const googleConnectBtn = '[data-testid="google-connect-btn"]'
 const googleSignedinBtn = '[data-testid="signed-in-account-btn"]'
 export const accountInfoHeader = '[data-testid="open-account-center"]'
@@ -26,9 +24,18 @@ const networkFeeSection = '[data-tetid="network-fee-section"]'
 const nextBtn = '[data-testid="next-btn"]'
 const backBtn = '[data-testid="back-btn"]'
 const cancelBtn = '[data-testid="cancel-btn"]'
-const dialogConfirmBtn = '[data-testid="dialog-confirm-btn"]'
 const safeActivationSection = '[data-testid="activation-section"]'
 const addressAutocompleteOptions = '[data-testid="address-item"]'
+export const qrCode = '[data-testid="qr-code"]'
+export const addressInfo = '[data-testid="address-info"]'
+export const choiceBtn = '[data-testid="choice-btn"]'
+const addFundsBtn = '[data-testid="add-funds-btn"]'
+const createTxBtn = '[data-testid="create-tx-btn"]'
+const qrCodeSwitch = '[data-testid="qr-code-switch"]'
+export const activateAccountBtn = '[data-testid="activate-account-btn"]'
+const notificationsSwitch = '[data-testid="notifications-switch"]'
+export const addFundsSection = '[data-testid="add-funds-section"]'
+export const noTokensAlert = '[data-testid="no-tokens-alert"]'
 
 const sponsorStr = 'Your account is sponsored by Goerli'
 const safeCreationProcessing = 'Transaction is being executed'
@@ -38,18 +45,51 @@ const policy1_2 = '1/1 policy'
 export const walletName = 'test1-sepolia-safe'
 export const defaultSepoliaPlaceholder = 'Sepolia Safe'
 const welcomeToSafeStr = 'Welcome to Safe'
+const initialSteps = '0 of 2 steps completed'
+export const addSignerStr = 'Add signer'
+export const accountRecoveryStr = 'Account recovery'
+export const sendTokensStr = 'Send tokens'
 
-export function verifyNewSafeDialogModal() {
-  main.verifyElementsIsVisible([dialogConfirmBtn])
+const connectWalletBtn = '[data-testid="connect-wallet-btn"]'
+export function checkNotificationsSwitchIs(status) {
+  cy.get(notificationsSwitch).find('input').should(`be.${status}`)
 }
-//
+
+export function clickOnActivateAccountBtn() {
+  cy.get(activateAccountBtn).click()
+}
+
+export function clickOnQRCodeSwitch() {
+  cy.get(qrCodeSwitch).click()
+}
+
+export function checkQRCodeSwitchStatus(state) {
+  cy.get(qrCodeSwitch).find('input').should(state)
+}
+
+export function checkInitialStepsDisplayed() {
+  cy.contains(initialSteps).should('be.visible')
+}
+
+export function clickOnAddFundsBtn() {
+  cy.get(addFundsBtn).click()
+}
+
+export function clickOnCreateTxBtn() {
+  cy.get(createTxBtn).click()
+  main.verifyElementsCount(choiceBtn, 6)
+}
+
+export function checkAllTxTypesOrder(expectedOrder) {
+  main.checkTextOrder(choiceBtn, expectedOrder)
+}
+
+export function clickOnTxType(tx) {
+  cy.get(choiceBtn).contains(tx).click()
+}
+
 export function verifyCFSafeCreated() {
   main.verifyElementsIsVisible([sidebar.pendingActivationIcon, safeActivationSection])
-}
-
-export function clickOnGotitBtn() {
-  cy.get(dialogConfirmBtn).click()
-  main.verifyElementsCount(connectedWalletExecMethod, 0)
 }
 
 export function selectPayLaterOption() {
@@ -87,22 +127,6 @@ export function verifySponsorMessageIsPresent() {
   cy.get(networkFeeSection).contains(sponsorStr).should('exist')
 }
 
-export function verifyGoogleConnectBtnIsDisabled() {
-  cy.get(googleConnectBtn).should('be.disabled')
-}
-
-export function verifyGoogleConnectBtnIsEnabled() {
-  cy.get(googleConnectBtn).should('not.be.disabled')
-}
-
-export function verifyGoogleSignin() {
-  return cy.get(googleSignedinBtn).should('exist')
-}
-
-export function verifyGoogleAccountInfoInHeader() {
-  return cy.get(accountInfoHeader).should('exist')
-}
-
 export function verifyPolicy1_1() {
   cy.contains(policy1_2).should('exist')
   // TOD: Need data-cy for containers
@@ -124,15 +148,6 @@ export function checkNetworkChangeWarningMsg() {
   cy.get('div').contains(changeNetworkWarningStr).should('exist')
 }
 
-export function connectWallet() {
-  cy.get('onboard-v2')
-    .shadow()
-    .within(($modal) => {
-      cy.wrap($modal).contains('div', constants.connectWalletNames.e2e).click()
-      cy.wrap($modal).get(connectingContainer).should('exist')
-    })
-}
-
 export function clickOnCreateNewSafeBtn() {
   cy.get(createNewSafeBtn).click().wait(1000)
 }
@@ -143,7 +158,7 @@ export function clickOnContinueWithWalletBtn() {
 
 export function clickOnConnectWalletBtn() {
   cy.get(welcomeLoginScreen).within(() => {
-    cy.get('button').contains(connectWalletBtn).should('be.visible').should('be.enabled').click().wait(1000)
+    cy.get(connectWalletBtn).should('be.visible').should('be.enabled').click().wait(1000)
   })
 }
 
@@ -157,7 +172,7 @@ export function clearWalletName() {
 
 export function selectNetwork(network) {
   cy.wait(1000)
-  cy.get(expandMoreIcon).eq(1).parents('div').eq(1).click()
+  cy.get(expandMoreIcon).parents('div').eq(1).click()
   cy.wait(1000)
   let regex = new RegExp(`^${network}$`)
   cy.get('li').contains(regex).click()

@@ -26,6 +26,11 @@ import { getTransactionTrackingType } from '@/services/analytics/tx-tracking'
 import { TX_EVENTS } from '@/services/analytics/events/transactions'
 import { trackEvent } from '@/services/analytics'
 import useChainId from '@/hooks/useChainId'
+import PermissionsCheck from './PermissionsCheck'
+import { isConfirmationViewOrder } from '@/utils/transaction-guards'
+import SwapOrderConfirmationView from '@/features/swap/components/SwapOrderConfirmationView'
+import { isSettingTwapFallbackHandler } from '@/features/swap/helpers/utils'
+import { TwapFallbackHandlerWarning } from '@/features/swap/components/TwapFallbackHandlerWarning'
 
 export type SubmitCallback = (txId: string, isExecuted?: boolean) => void
 
@@ -73,9 +78,11 @@ export const SignOrExecuteForm = ({
   const isCorrectNonce = useValidateNonce(safeTx)
   const [decodedData, decodedDataError, decodedDataLoading] = useDecodeTx(safeTx)
   const isBatchable = props.isBatchable !== false && safeTx && !isDelegateCall(safeTx)
+  const isSwapOrder = isConfirmationViewOrder(decodedData)
 
   const { safe } = useSafeInfo()
   const isCounterfactualSafe = !safe.deployed
+  const isChangingFallbackHandler = isSettingTwapFallbackHandler(decodedData)
 
   // If checkbox is checked and the transaction is executable, execute it, otherwise sign it
   const canExecute = isCorrectNonce && (props.isExecutable || isNewExecutableTx)
@@ -96,19 +103,27 @@ export const SignOrExecuteForm = ({
       <TxCard>
         {props.children}
 
+        {isChangingFallbackHandler && <TwapFallbackHandlerWarning />}
+
+        {isSwapOrder && (
+          <ErrorBoundary fallback={<></>}>
+            <SwapOrderConfirmationView order={decodedData} settlementContract={safeTx?.data.to ?? ''} />
+          </ErrorBoundary>
+        )}
+
         <ErrorBoundary fallback={<div>Error parsing data</div>}>
           <ApprovalEditor safeTransaction={safeTx} />
-        </ErrorBoundary>
 
-        <DecodedTx
-          tx={safeTx}
-          txId={props.txId}
-          decodedData={decodedData}
-          decodedDataError={decodedDataError}
-          decodedDataLoading={decodedDataLoading}
-          showMultisend={!props.isBatch}
-          showToBlock={props.showToBlock}
-        />
+          <DecodedTx
+            tx={safeTx}
+            txId={props.txId}
+            decodedData={decodedData}
+            decodedDataError={decodedDataError}
+            decodedDataLoading={decodedDataLoading}
+            showMultisend={!props.isBatch}
+            showToBlock={props.showToBlock}
+          />
+        </ErrorBoundary>
 
         {!isCounterfactualSafe && <RedefineBalanceChanges />}
       </TxCard>
@@ -117,6 +132,12 @@ export const SignOrExecuteForm = ({
         <TxCard>
           <TxChecks />
         </TxCard>
+      )}
+
+      {!isCounterfactualSafe && safeTx && isCreation && (
+        <ErrorBoundary>
+          <PermissionsCheck onSubmit={onSubmit} safeTx={safeTx} safeTxError={safeTxError} />
+        </ErrorBoundary>
       )}
 
       <TxCard>

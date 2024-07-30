@@ -4,7 +4,6 @@ import Track from '@/components/common/Track'
 import QrCodeButton from '@/components/sidebar/QrCodeButton'
 import { TxModalContext } from '@/components/tx-flow'
 import { NewTxFlow } from '@/components/tx-flow/flows'
-import { useHasFeature } from '@/hooks/useChains'
 import SwapIcon from '@/public/images/common/swap.svg'
 import { OVERVIEW_EVENTS, trackEvent } from '@/services/analytics'
 import Link from 'next/link'
@@ -14,13 +13,13 @@ import ArrowIconNW from '@/public/images/common/arrow-top-right.svg'
 import ArrowIconSE from '@/public/images/common/arrow-se.svg'
 import FiatValue from '@/components/common/FiatValue'
 import { AppRoutes } from '@/config/routes'
-import { FEATURES } from '@/utils/chains'
 import { Button, Grid, Skeleton, Typography, useMediaQuery } from '@mui/material'
 import { useRouter } from 'next/router'
 import { type ReactElement, useContext } from 'react'
 import { WidgetBody, WidgetContainer } from '../styled'
 import { useTheme } from '@mui/material/styles'
 import { SWAP_EVENTS, SWAP_LABELS } from '@/services/analytics/events/swaps'
+import useIsSwapFeatureEnabled from '@/features/swap/hooks/useIsSwapFeatureEnabled'
 
 const SkeletonOverview = (
   <>
@@ -47,7 +46,7 @@ const Overview = (): ReactElement => {
   const router = useRouter()
   const theme = useTheme()
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'))
-  const isSwapFeatureEnabled = useHasFeature(FEATURES.NATIVE_SWAPS)
+  const isSwapFeatureEnabled = useIsSwapFeatureEnabled()
 
   const isInitialState = !safeLoaded && !safeLoading
   const isLoading = safeLoading || balancesLoading || isInitialState
@@ -73,7 +72,7 @@ const Overview = (): ReactElement => {
                 </Typography>
                 <Typography component="div" variant="h1" fontSize={44} lineHeight="40px">
                   {safe.deployed ? (
-                    <FiatValue value={balances.fiatTotal} />
+                    <FiatValue value={balances.fiatTotal} maxLength={20} />
                   ) : (
                     <TokenAmount
                       value={balances.items[0].balance}
@@ -131,6 +130,7 @@ const Overview = (): ReactElement => {
                       <Track {...SWAP_EVENTS.OPEN_SWAPS} label={SWAP_LABELS.dashboard}>
                         <Link href={{ pathname: AppRoutes.swap, query: router.query }} passHref type="button">
                           <Button
+                            data-testid="overview-swap-btn"
                             size={isSmallScreen ? 'medium' : 'small'}
                             variant="outlined"
                             color="primary"

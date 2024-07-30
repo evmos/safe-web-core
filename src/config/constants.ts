@@ -18,7 +18,7 @@ export const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || ''
 export const BEAMER_ID = process.env.NEXT_PUBLIC_BEAMER_ID || ''
 
 // Wallets
-export const WC_PROJECT_ID = process.env.NEXT_PUBLIC_WC_PROJECT_ID || ''
+export const WC_PROJECT_ID = process.env.NEXT_PUBLIC_WC_PROJECT_ID || IS_PRODUCTION ? '4' : '2'
 export const TREZOR_APP_URL = 'app.safe.global'
 export const TREZOR_EMAIL = 'support@safe.global'
 
@@ -64,15 +64,6 @@ export enum SafeAppsTag {
   ONRAMP = 'onramp',
 }
 
-export const WC_APP_PROD = {
-  id: 4,
-  url: 'https://apps.safe.protofire.io/wallet-connect',
-}
-export const WC_APP_DEV = {
-  id: 2,
-  url: 'https://dev-apps.safe.protofire.io/wallet-connect',
-}
-
 // Help Center
 export const HELP_CENTER_URL = 'https://help.safe.global'
 export const HelpCenterArticle = {
@@ -93,6 +84,7 @@ export const HelpCenterArticle = {
   UNEXPECTED_DELEGATE_CALL: `${HELP_CENTER_URL}/en/articles/40794-why-do-i-see-an-unexpected-delegate-call-warning-in-my-transaction`,
   DELEGATES: `${HELP_CENTER_URL}/en/articles/40799-what-is-a-delegate-key`,
   PUSH_NOTIFICATIONS: `${HELP_CENTER_URL}/en/articles/99197-how-to-start-receiving-web-push-notifications-in-the-web-wallet`,
+  SWAP_WIDGET_FEES: `${HELP_CENTER_URL}/en/articles/178530-how-does-the-widget-fee-work-for-native-swaps`,
 } as const
 export const HelperCenterArticleTitles = {
   RECOVERY: 'Learn more about the Account recovery process',

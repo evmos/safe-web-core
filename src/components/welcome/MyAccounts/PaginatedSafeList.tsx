@@ -8,7 +8,7 @@ import { sameAddress } from '@/utils/addresses'
 import InfiniteScroll from '@/components/common/InfiniteScroll'
 
 type PaginatedSafeListProps = {
-  safes: SafeItem[]
+  safes?: SafeItem[]
   title: ReactNode
   noSafesMessage?: ReactNode
   action?: ReactElement
@@ -26,7 +26,9 @@ const SafeListPage = ({ safes, onLinkClick }: SafeListPageProps) => {
   const [overviews] = useSafeOverviews(safes)
 
   const findOverview = (item: SafeItem) => {
-    return overviews?.find((overview) => sameAddress(overview.address.value, item.address))
+    return overviews?.find(
+      (overview) => item.chainId === overview.chainId && sameAddress(overview.address.value, item.address),
+    )
   }
 
   return (
@@ -77,7 +79,7 @@ const PaginatedSafeList = ({ safes, title, action, noSafesMessage, onLinkClick }
         <Typography variant="h5" fontWeight={700} mb={2} className={css.listTitle}>
           {title}
 
-          {safes.length > 0 && (
+          {safes && safes.length > 0 && (
             <Typography component="span" color="var(--color-primary-light)" fontSize="inherit" fontWeight="normal">
               {' '}
               ({safes.length})
@@ -88,11 +90,11 @@ const PaginatedSafeList = ({ safes, title, action, noSafesMessage, onLinkClick }
         {action}
       </div>
 
-      {safes.length > 0 ? (
+      {safes && safes.length > 0 ? (
         <AllSafeListPages safes={safes} onLinkClick={onLinkClick} />
       ) : (
         <Typography variant="body2" color="text.secondary" textAlign="center" py={3} mx="auto" width={250}>
-          {noSafesMessage}
+          {safes ? noSafesMessage : 'Loading...'}
         </Typography>
       )}
     </Paper>

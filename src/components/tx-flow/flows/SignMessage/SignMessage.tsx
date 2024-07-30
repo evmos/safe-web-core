@@ -54,6 +54,8 @@ import { selectBlindSigning } from '@/store/settingsSlice'
 import NextLink from 'next/link'
 import { AppRoutes } from '@/config/routes'
 import { useRouter } from 'next/router'
+import MsgShareLink from '@/components/safe-messages/MsgShareLink'
+import LinkIcon from '@/public/images/messages/link.svg'
 
 const createSkeletonMessage = (confirmationsRequired: number): SafeMessage => {
   return {
@@ -79,7 +81,7 @@ const MessageHashField = ({ label, hashValue }: { label: string; hashValue: stri
     <Typography variant="body2" fontWeight={700} mt={2}>
       {label}:
     </Typography>
-    <Typography variant="body2" component="div">
+    <Typography data-testid="message-hash" variant="body2" component="div">
       <EthHashInfo address={hashValue} showAvatar={false} shortAddress={false} showCopyButton />
     </Typography>
   </>
@@ -166,7 +168,7 @@ const BlindSigningWarning = ({
   return (
     <ErrorMessage level={isBlindSigningEnabled ? 'warning' : 'error'}>
       This request involves{' '}
-      <Link component={NextLink} href={{ pathname: AppRoutes.settings.securityLogin, query }}>
+      <Link component={NextLink} href={{ pathname: AppRoutes.settings.security, query }}>
         blind signing
       </Link>
       , which can lead to unpredictable outcomes.
@@ -176,7 +178,7 @@ const BlindSigningWarning = ({
       ) : (
         <>
           If you wish to proceed, you must first{' '}
-          <Link component={NextLink} href={{ pathname: AppRoutes.settings.securityLogin, query }}>
+          <Link component={NextLink} href={{ pathname: AppRoutes.settings.security, query }}>
             enable blind signing
           </Link>
           .
@@ -232,12 +234,14 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
   const [safeMessage, setSafeMessage] = useSafeMessage(safeMessageHash)
   const isPlainTextMessage = typeof decodedMessage === 'string'
   const decodedMessageAsString = isPlainTextMessage ? decodedMessage : JSON.stringify(decodedMessage, null, 2)
-  const hasSigned = !!safeMessage?.confirmations.some(({ owner }) => owner.value === wallet?.address)
+  const signedByCurrentSafe = !!safeMessage?.confirmations.some(({ owner }) => owner.value === wallet?.address)
+  const hasSignature = safeMessage?.confirmations && safeMessage.confirmations.length > 0
   const isFullySigned = !!safeMessage?.preparedSignature
   const isEip712 = isEIP712TypedData(decodedMessage)
   const isBlindSigningRequest = isBlindSigningPayload(decodedMessage)
   const isBlindSigningEnabled = useAppSelector(selectBlindSigning)
-  const isDisabled = !isOwner || hasSigned || !safe.deployed || (!isBlindSigningEnabled && isBlindSigningRequest)
+  const isDisabled =
+    !isOwner || signedByCurrentSafe || !safe.deployed || (!isBlindSigningEnabled && isBlindSigningRequest)
 
   const { onSign, submitError } = useSyncSafeMessageSigner(
     safeMessage,
@@ -302,7 +306,9 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
           <DecodedMsg message={decodedMessage} isInModal />
 
           <Accordion sx={{ my: 2, '&.Mui-expanded': { mt: 2 } }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>SafeMessage details</AccordionSummary>
+            <AccordionSummary data-testid="message-details" expandIcon={<ExpandMoreIcon />}>
+              SafeMessage details
+            </AccordionSummary>
             <AccordionDetails>
               <MessageHashField label="SafeMessage" hashValue={safeMessageMessage} />
               <MessageHashField label="SafeMessage hash" hashValue={safeMessageHash} />
@@ -318,14 +324,14 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
       ) : (
         <>
           <TxCard>
-            <AlreadySignedByOwnerMessage hasSigned={hasSigned} />
+            <AlreadySignedByOwnerMessage hasSigned={signedByCurrentSafe} />
 
             <InfoBox
               title="Collect all the confirmations"
               message={
-                requestId
+                requestId && !hasSignature
                   ? 'Please keep this modal open until all signers confirm this message. Closing the modal will abort the signing request.'
-                  : 'The signature will be submitted to the Safe App when the message is fully signed.'
+                  : 'The signature will be submitted to the requesting app when the message is fully signed.'
               }
             >
               <MsgSigners
@@ -335,6 +341,22 @@ const SignMessage = ({ message, safeAppId, requestId }: ProposeProps | ConfirmPr
                 backgroundColor={palette.info.background}
               />
             </InfoBox>
+
+            {hasSignature && (
+              <InfoBox
+                title="Share the link with other owners"
+                message={
+                  <>
+                    <Typography mb={2}>
+                      The owners will receive a notification about signing the message. You can also share the link with
+                      them to speed up the process.
+                    </Typography>
+                    <MsgShareLink safeMessageHash={safeMessageHash} button />
+                  </>
+                }
+                icon={LinkIcon}
+              />
+            )}
 
             <WrongChainWarning />
 
