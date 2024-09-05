@@ -1,10 +1,12 @@
 import ChainIndicator from '@/components/common/ChainIndicator'
 import type { NamedAddress } from '@/components/new-safe/create/types'
 import EthHashInfo from '@/components/common/EthHashInfo'
+import { safeCreationDispatch, SafeCreationEvent } from '@/features/counterfactual/services/safeCreationEvents'
+import { addUndeployedSafe } from '@/features/counterfactual/store/undeployedSafesSlice'
 import { getTotalFeeFormatted } from '@/hooks/useGasPrice'
 import type { StepRenderProps } from '@/components/new-safe/CardStepper/useCardStepper'
 import type { NewSafeFormData } from '@/components/new-safe/create'
-import { computeNewSafeAddress } from '@/components/new-safe/create/logic'
+import { computeNewSafeAddress, createNewSafe, relaySafeCreation } from '@/components/new-safe/create/logic'
 import { getAvailableSaltNonce } from '@/components/new-safe/create/logic/utils'
 import NetworkWarning from '@/components/new-safe/create/NetworkWarning'
 import css from '@/components/new-safe/create/steps/ReviewStep/styles.module.css'
@@ -14,33 +16,32 @@ import useSyncSafeCreationStep from '@/components/new-safe/create/useSyncSafeCre
 import ReviewRow from '@/components/new-safe/ReviewRow'
 import ErrorMessage from '@/components/tx/ErrorMessage'
 import { ExecutionMethod, ExecutionMethodSelector } from '@/components/tx/ExecutionMethodSelector'
-import { RELAY_SPONSORS } from '@/components/tx/SponsoredBy'
 import { LATEST_SAFE_VERSION } from '@/config/constants'
 import PayNowPayLater, { PayMethod } from '@/features/counterfactual/PayNowPayLater'
-import { createCounterfactualSafe } from '@/features/counterfactual/utils'
+import { CF_TX_GROUP_KEY, createCounterfactualSafe } from '@/features/counterfactual/utils'
 import { useCurrentChain, useHasFeature } from '@/hooks/useChains'
 import useGasPrice from '@/hooks/useGasPrice'
 import useIsWrongChain from '@/hooks/useIsWrongChain'
-import { MAX_HOUR_RELAYS, useLeastRemainingRelays } from '@/hooks/useRemainingRelays'
+import { useLeastRemainingRelays } from '@/hooks/useRemainingRelays'
 import useWalletCanPay from '@/hooks/useWalletCanPay'
 import useWallet from '@/hooks/wallets/useWallet'
 import { useWeb3 } from '@/hooks/wallets/web3'
 import { CREATE_SAFE_CATEGORY, CREATE_SAFE_EVENTS, OVERVIEW_EVENTS, trackEvent } from '@/services/analytics'
 import { gtmSetSafeAddress } from '@/services/analytics/gtm'
 import { getReadOnlyFallbackHandlerContract } from '@/services/contracts/safeContracts'
-import { isSocialLoginWallet } from '@/services/mpc/SocialLoginModule'
+import { asError } from '@/services/exceptions/utils'
 import { useAppDispatch } from '@/store'
-import { FEATURES } from '@/utils/chains'
+import { FEATURES, hasFeature } from '@/utils/chains'
 import { hasRemainingRelays } from '@/utils/relaying'
+import { isWalletRejection } from '@/utils/wallets'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import { Alert, Box, Button, CircularProgress, Divider, Grid, Typography } from '@mui/material'
+import { Box, Button, CircularProgress, Divider, Grid, Typography } from '@mui/material'
 import { type DeploySafeProps } from '@safe-global/protocol-kit'
+import type { SafeVersion } from '@safe-global/safe-core-sdk-types'
 import { type ChainInfo } from '@safe-global/safe-gateway-typescript-sdk'
 import classnames from 'classnames'
-import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useMemo, useState } from 'react'
-import { usePendingSafe } from '../StatusStep/usePendingSafe'
 
 export const NetworkFee = ({
   totalFee,
@@ -55,45 +56,14 @@ export const NetworkFee = ({
 }) => {
   const wallet = useWallet()
 
-  const isSocialLogin = isSocialLoginWallet(wallet?.label)
-
-  if (!isSocialLogin) {
-    return (
-      <Box className={classnames(css.networkFee, { [css.networkFeeInline]: inline })}>
-        <Typography className={classnames({ [css.sponsoredFee]: willRelay })}>
-          <b>
-            &asymp; {totalFee} {chain?.nativeCurrency.symbol}
-          </b>
-        </Typography>
-      </Box>
-    )
-  }
-
-  if (willRelay) {
-    const sponsor = RELAY_SPONSORS[chain?.chainId || ''] || RELAY_SPONSORS.default
-    return (
-      <>
-        <Typography fontWeight="bold">Free</Typography>
-        <Typography variant="body2">
-          Your account is sponsored by
-          <Image
-            data-testid="sponsor-icon"
-            src={sponsor.logo}
-            alt={sponsor.name}
-            width={16}
-            height={16}
-            style={{ margin: '-3px 0px -3px 4px' }}
-          />{' '}
-          {sponsor.name}
-        </Typography>
-      </>
-    )
-  }
-
   return (
-    <Alert severity="error">
-      You have used up your {MAX_HOUR_RELAYS} free transactions per hour. Please try again later.
-    </Alert>
+    <Box className={classnames(css.networkFee, { [css.networkFeeInline]: inline })}>
+      <Typography className={classnames({ [css.sponsoredFee]: willRelay })}>
+        <b>
+          &asymp; {totalFee} {chain?.nativeCurrency.symbol}
+        </b>
+      </Typography>
+    </Box>
   )
 }
 
@@ -152,12 +122,12 @@ const ReviewStep = ({ data, onSubmit, onBack, setStep }: StepRenderProps<NewSafe
   const dispatch = useAppDispatch()
   const router = useRouter()
   const [gasPrice] = useGasPrice()
-  const [_, setPendingSafe] = usePendingSafe()
   const [payMethod, setPayMethod] = useState(PayMethod.PayLater)
   const [executionMethod, setExecutionMethod] = useState(ExecutionMethod.RELAY)
   const [isCreating, setIsCreating] = useState<boolean>(false)
   const [submitError, setSubmitError] = useState<string>()
   const isCounterfactualEnabled = useHasFeature(FEATURES.COUNTERFACTUAL)
+  const isEIP1559 = chain && hasFeature(chain, FEATURES.EIP1559)
 
   const ownerAddresses = useMemo(() => data.owners.map((owner) => owner.address), [data.owners])
   const [minRelays] = useLeastRemainingRelays(ownerAddresses)
@@ -209,8 +179,8 @@ const ReviewStep = ({ data, onSubmit, onBack, setStep }: StepRenderProps<NewSafe
         },
       }
 
-      const saltNonce = await getAvailableSaltNonce(provider, { ...props, saltNonce: '0' })
-      const safeAddress = await computeNewSafeAddress(provider, { ...props, saltNonce })
+      const saltNonce = await getAvailableSaltNonce(provider, { ...props, saltNonce: '0' }, chain.chainId)
+      const safeAddress = await computeNewSafeAddress(provider, { ...props, saltNonce }, chain.chainId)
 
       if (isCounterfactual && payMethod === PayMethod.PayLater) {
         gtmSetSafeAddress(safeAddress)
@@ -221,26 +191,82 @@ const ReviewStep = ({ data, onSubmit, onBack, setStep }: StepRenderProps<NewSafe
         return
       }
 
-      const pendingSafe = {
-        ...data,
-        saltNonce: Number(saltNonce),
-        safeAddress,
-        willRelay,
+      const options: DeploySafeProps['options'] = isEIP1559
+        ? {
+            maxFeePerGas: maxFeePerGas?.toString(),
+            maxPriorityFeePerGas: maxPriorityFeePerGas?.toString(),
+            gasLimit: gasLimit?.toString(),
+          }
+        : { gasPrice: maxFeePerGas?.toString(), gasLimit: gasLimit?.toString() }
+
+      const undeployedSafe = {
+        chainId: chain.chainId,
+        address: safeAddress,
+        type: PayMethod.PayNow,
+        safeProps: {
+          safeAccountConfig: props.safeAccountConfig,
+          safeDeploymentConfig: {
+            saltNonce,
+            safeVersion: LATEST_SAFE_VERSION as SafeVersion,
+          },
+        },
       }
 
-      trackEvent({ ...OVERVIEW_EVENTS.PROCEED_WITH_TX, label: 'deployment', category: CREATE_SAFE_CATEGORY })
+      const onSubmitCallback = async (taskId?: string, txHash?: string) => {
+        dispatch(addUndeployedSafe(undeployedSafe))
 
-      setPendingSafe(pendingSafe)
-      onSubmit(pendingSafe)
+        if (taskId) {
+          safeCreationDispatch(SafeCreationEvent.RELAYING, { groupKey: CF_TX_GROUP_KEY, taskId, safeAddress })
+        }
+
+        if (txHash) {
+          safeCreationDispatch(SafeCreationEvent.PROCESSING, {
+            groupKey: CF_TX_GROUP_KEY,
+            txHash,
+            safeAddress,
+          })
+        }
+
+        trackEvent(CREATE_SAFE_EVENTS.SUBMIT_CREATE_SAFE)
+        trackEvent({ ...OVERVIEW_EVENTS.PROCEED_WITH_TX, label: 'deployment', category: CREATE_SAFE_CATEGORY })
+
+        onSubmit(data)
+      }
+
+      if (willRelay) {
+        const taskId = await relaySafeCreation(
+          chain,
+          props.safeAccountConfig.owners,
+          props.safeAccountConfig.threshold,
+          Number(saltNonce),
+        )
+        onSubmitCallback(taskId)
+      } else {
+        await createNewSafe(provider, {
+          safeAccountConfig: props.safeAccountConfig,
+          saltNonce,
+          options,
+          callback: (txHash) => {
+            onSubmitCallback(undefined, txHash)
+          },
+        })
+      }
     } catch (_err) {
-      setSubmitError('Error creating the Safe Account. Please try again later.')
+      const error = asError(_err)
+      const submitError = isWalletRejection(error)
+        ? 'User rejected signing.'
+        : 'Error creating the Safe Account. Please try again later.'
+      setSubmitError(submitError)
+
+      if (isWalletRejection(error)) {
+        trackEvent(CREATE_SAFE_EVENTS.REJECT_CREATE_SAFE)
+      }
     }
 
     setIsCreating(false)
   }
 
-  const isSocialLogin = isSocialLoginWallet(wallet?.label)
-  const isDisabled = isWrongChain || (isSocialLogin && !willRelay) || isCreating
+  const isDisabled = isWrongChain || isCreating
 
   return (
     <>
@@ -254,7 +280,7 @@ const ReviewStep = ({ data, onSubmit, onBack, setStep }: StepRenderProps<NewSafe
           <Box className={layoutCss.row}>
             <PayNowPayLater totalFee={totalFee} canRelay={canRelay} payMethod={payMethod} setPayMethod={setPayMethod} />
 
-            {canRelay && !isSocialLogin && payMethod === PayMethod.PayNow && (
+            {canRelay && payMethod === PayMethod.PayNow && (
               <Grid container spacing={3} pt={2}>
                 <ReviewRow
                   value={
@@ -285,7 +311,7 @@ const ReviewStep = ({ data, onSubmit, onBack, setStep }: StepRenderProps<NewSafe
         <>
           <Divider />
           <Box className={layoutCss.row} display="flex" flexDirection="column" gap={3}>
-            {canRelay && !isSocialLogin && (
+            {canRelay && (
               <Grid container spacing={3}>
                 <ReviewRow
                   name="Execution method"
@@ -307,7 +333,7 @@ const ReviewStep = ({ data, onSubmit, onBack, setStep }: StepRenderProps<NewSafe
                   <>
                     <NetworkFee totalFee={totalFee} willRelay={willRelay} chain={chain} />
 
-                    {!willRelay && !isSocialLogin && (
+                    {!willRelay && (
                       <Typography variant="body2" color="text.secondary" mt={1}>
                         You will have to confirm a transaction with your connected wallet.
                       </Typography>

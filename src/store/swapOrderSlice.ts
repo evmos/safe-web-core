@@ -2,10 +2,12 @@ import type { listenerMiddlewareInstance } from '@/store'
 import { createSelector, createSlice } from '@reduxjs/toolkit'
 import type { OrderStatuses } from '@safe-global/safe-gateway-typescript-sdk'
 import type { RootState } from '@/store'
-import { isSwapTxInfo, isTransactionListItem } from '@/utils/transaction-guards'
+import { isSwapOrderTxInfo, isTransactionListItem } from '@/utils/transaction-guards'
 import { txHistorySlice } from '@/store/txHistorySlice'
 import { showNotification } from '@/store/notificationsSlice'
 import { selectSafeInfo } from '@/store/safeInfoSlice'
+import { selectChainById } from '@/store/chainsSlice'
+import { getTxLink } from '@/utils/tx-link'
 
 type AllStatuses = OrderStatuses | 'created'
 type Order = {
@@ -80,11 +82,18 @@ export const swapOrderStatusListener = (listenerMiddleware: typeof listenerMiddl
       if (oldStatus === newStatus || newStatus === undefined) {
         return
       }
+      const safeInfo = selectSafeInfo(listenerApi.getState())
+
+      let link = undefined
+      if (swapOrder.txId && safeInfo.data?.chainId && safeInfo.data?.address) {
+        const chainInfo = selectChainById(listenerApi.getState(), safeInfo.data?.chainId)
+        if (chainInfo !== undefined) {
+          link = getTxLink(swapOrder.txId, chainInfo, safeInfo.data?.address.value)
+        }
+      }
 
       switch (newStatus) {
         case 'created':
-          const safeInfo = selectSafeInfo(listenerApi.getState())
-
           dispatch(
             showNotification({
               title: 'Order created',
@@ -94,6 +103,7 @@ export const swapOrderStatusListener = (listenerMiddleware: typeof listenerMiddl
                   : 'Waiting for confirmation from signers of your Safe',
               groupKey,
               variant: 'info',
+              link,
             }),
           )
 
@@ -105,6 +115,7 @@ export const swapOrderStatusListener = (listenerMiddleware: typeof listenerMiddl
               message: 'Waiting for confirmation from signers of your Safe',
               groupKey,
               variant: 'info',
+              link,
             }),
           )
           break
@@ -115,6 +126,7 @@ export const swapOrderStatusListener = (listenerMiddleware: typeof listenerMiddl
               message: 'Waiting for order execution by the CoW Protocol',
               groupKey,
               variant: 'info',
+              link,
             }),
           )
           break
@@ -129,6 +141,7 @@ export const swapOrderStatusListener = (listenerMiddleware: typeof listenerMiddl
               message: 'Your order has been successful',
               groupKey,
               variant: 'success',
+              link,
             }),
           )
           break
@@ -143,6 +156,7 @@ export const swapOrderStatusListener = (listenerMiddleware: typeof listenerMiddl
               message: 'Your order has reached the expiry time and has become invalid',
               groupKey,
               variant: 'warning',
+              link,
             }),
           )
           break
@@ -157,6 +171,7 @@ export const swapOrderStatusListener = (listenerMiddleware: typeof listenerMiddl
               message: 'Your order has been cancelled',
               groupKey,
               variant: 'warning',
+              link,
             }),
           )
           break
@@ -182,7 +197,7 @@ export const swapOrderListener = (listenerMiddleware: typeof listenerMiddlewareI
           continue
         }
 
-        if (isSwapTxInfo(result.transaction.txInfo)) {
+        if (isSwapOrderTxInfo(result.transaction.txInfo)) {
           const swapOrder = result.transaction.txInfo
           const oldStatus = selectSwapOrderStatus(listenerApi.getOriginalState(), swapOrder.uid)
 

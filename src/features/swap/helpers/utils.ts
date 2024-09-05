@@ -1,13 +1,15 @@
-import type { SwapOrder } from '@safe-global/safe-gateway-typescript-sdk'
+import type { DecodedDataResponse, Order as SwapOrder } from '@safe-global/safe-gateway-typescript-sdk'
 import { formatUnits } from 'ethers'
-import type { AnyAppDataDocVersion, latest } from '@cowprotocol/app-data'
+import type { AnyAppDataDocVersion, latest, LatestAppDataDocVersion } from '@cowprotocol/app-data'
+
+import { TradeType, UiOrderType } from '@/features/swap/types'
 
 type Quantity = {
   amount: string | number | bigint
   decimals: number
 }
 
-enum OrderKind {
+export enum OrderKind {
   SELL = 'sell',
   BUY = 'buy',
 }
@@ -19,6 +21,8 @@ function calculateDifference(amountA: string, amountB: string, decimals: number)
 function asDecimal(amount: number | bigint, decimals: number): number {
   return Number(formatUnits(amount, decimals))
 }
+
+export const TWAP_FALLBACK_HANDLER = '0x2f55e8b20D0B9FEFA187AA7d00B6Cbe563605bF5'
 
 export const getExecutionPrice = (
   order: Pick<SwapOrder, 'executedSellAmount' | 'executedBuyAmount' | 'buyToken' | 'sellToken'>,
@@ -37,16 +41,13 @@ export const getExecutionPrice = (
 }
 
 export const getLimitPrice = (
-  order: Pick<SwapOrder, 'sellAmount' | 'buyAmount' | 'buyAmount' | 'buyToken' | 'sellToken'>,
+  order: Pick<SwapOrder, 'sellAmount' | 'buyAmount' | 'buyToken' | 'sellToken'>,
 ): number => {
   const { sellAmount, buyAmount, buyToken, sellToken } = order
 
   const ratio = calculateRatio(
     { amount: sellAmount, decimals: sellToken.decimals },
-    {
-      amount: buyAmount,
-      decimals: buyToken.decimals,
-    },
+    { amount: buyAmount, decimals: buyToken.decimals },
   )
 
   return ratio
@@ -70,6 +71,49 @@ export const getSurplusPrice = (
   } else {
     return 0
   }
+}
+
+export const getPartiallyFilledSurplus = (order: SwapOrder): number => {
+  if (order.kind === OrderKind.BUY) {
+    return getPartiallyFilledBuySurplus(order)
+  } else if (order.kind === OrderKind.SELL) {
+    return getPartiallyFilledSellSurplus(order)
+  } else {
+    return 0
+  }
+}
+
+const getPartiallyFilledBuySurplus = (
+  order: Pick<
+    SwapOrder,
+    'executedBuyAmount' | 'buyAmount' | 'buyToken' | 'executedSellAmount' | 'sellAmount' | 'sellToken' | 'kind'
+  >,
+): number => {
+  const { executedSellAmount, sellAmount, sellToken, executedBuyAmount, buyAmount, buyToken } = order
+
+  const limitPrice = calculateRatio(
+    { amount: sellAmount, decimals: sellToken.decimals },
+    { amount: buyAmount, decimals: buyToken.decimals },
+  )
+  const maximumSellAmount = asDecimal(BigInt(executedBuyAmount), buyToken.decimals) * limitPrice
+  return maximumSellAmount - asDecimal(BigInt(executedSellAmount), sellToken.decimals)
+}
+
+const getPartiallyFilledSellSurplus = (
+  order: Pick<
+    SwapOrder,
+    'executedBuyAmount' | 'buyAmount' | 'buyToken' | 'executedSellAmount' | 'sellAmount' | 'sellToken' | 'kind'
+  >,
+): number => {
+  const { executedSellAmount, sellAmount, sellToken, executedBuyAmount, buyAmount, buyToken } = order
+
+  const limitPrice = calculateRatio(
+    { amount: buyAmount, decimals: buyToken.decimals },
+    { amount: sellAmount, decimals: sellToken.decimals },
+  )
+
+  const minimumBuyAmount = asDecimal(BigInt(executedSellAmount), sellToken.decimals) * limitPrice
+  return asDecimal(BigInt(executedBuyAmount), buyToken.decimals) - minimumBuyAmount
 }
 
 export const getFilledPercentage = (
@@ -117,6 +161,13 @@ export const getOrderClass = (order: Pick<SwapOrder, 'fullAppData'>): latest.Ord
   return orderClass || 'market'
 }
 
+export const getOrderFeeBps = (order: Pick<SwapOrder, 'fullAppData'>): number => {
+  const fullAppData = order.fullAppData as unknown as LatestAppDataDocVersion
+  const basisPoints = (fullAppData?.metadata?.partnerFee as latest.PartnerFee)?.bps
+
+  return Number(basisPoints) || 0
+}
+
 export const isOrderPartiallyFilled = (
   order: Pick<SwapOrder, 'executedBuyAmount' | 'executedSellAmount' | 'sellAmount' | 'buyAmount' | 'kind'>,
 ): boolean => {
@@ -130,4 +181,31 @@ export const isOrderPartiallyFilled = (
   }
 
   return BigInt(executedSellAmount) !== 0n && executedSellAmount < sellAmount
+}
+
+export const UiOrderTypeToOrderType = (orderType: UiOrderType): TradeType => {
+  switch (orderType) {
+    case UiOrderType.SWAP:
+      return TradeType.SWAP
+    case UiOrderType.LIMIT:
+      return TradeType.LIMIT
+    case UiOrderType.TWAP:
+      return TradeType.ADVANCED
+  }
+}
+
+export const isSettingTwapFallbackHandler = (decodedData: DecodedDataResponse | undefined) => {
+  return (
+    decodedData?.parameters?.some(
+      (item) =>
+        Array.isArray(item?.valueDecoded) &&
+        item.valueDecoded.some(
+          (decoded) =>
+            decoded.dataDecoded?.method === 'setFallbackHandler' &&
+            decoded.dataDecoded.parameters?.some(
+              (parameter) => parameter.name === 'handler' && parameter.value === TWAP_FALLBACK_HANDLER,
+            ),
+        ),
+    ) || false
+  )
 }

@@ -1,8 +1,6 @@
-import { getInteractionTitle } from '@/components/safe-apps/utils'
 import SendToBlock from '@/components/tx/SendToBlock'
-import SwapOrderConfirmationView from '@/features/swap/components/SwapOrderConfirmationView'
 import { useCurrentChain } from '@/hooks/useChains'
-import { isSwapConfirmationViewOrder } from '@/utils/transaction-guards'
+import { isConfirmationViewOrder } from '@/utils/transaction-guards'
 import { type SyntheticEvent, type ReactElement, memo } from 'react'
 import {
   Accordion,
@@ -10,13 +8,19 @@ import {
   AccordionSummary,
   Box,
   Skeleton,
+  Stack,
   SvgIcon,
   Tooltip,
   Typography,
 } from '@mui/material'
 import { OperationType, type SafeTransaction } from '@safe-global/safe-core-sdk-types'
 import type { DecodedDataResponse } from '@safe-global/safe-gateway-typescript-sdk'
-import { getTransactionDetails, type TransactionDetails, Operation } from '@safe-global/safe-gateway-typescript-sdk'
+import {
+  getTransactionDetails,
+  type TransactionDetails,
+  Operation,
+  TokenType,
+} from '@safe-global/safe-gateway-typescript-sdk'
 import useChainId from '@/hooks/useChainId'
 import useAsync from '@/hooks/useAsync'
 import { MethodDetails } from '@/components/transactions/TxDetails/TxData/DecodedData/MethodDetails'
@@ -29,6 +33,9 @@ import ExternalLink from '@/components/common/ExternalLink'
 import { HelpCenterArticle } from '@/config/constants'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import accordionCss from '@/styles/accordion.module.css'
+import { formatVisualAmount } from '@/utils/formatters'
+import SendAmountBlock from '@/components/tx-flow/flows/TokenTransfer/SendAmountBlock'
+import { ZERO_ADDRESS } from '@safe-global/protocol-kit/dist/src/utils/constants'
 
 type DecodedTxProps = {
   tx?: SafeTransaction
@@ -51,7 +58,7 @@ const DecodedTx = ({
 }: DecodedTxProps): ReactElement | null => {
   const chainId = useChainId()
   const chain = useCurrentChain()
-  const isSwapOrder = isSwapConfirmationViewOrder(decodedData)
+  const isSwapOrder = isConfirmationViewOrder(decodedData)
 
   const isMultisend = !!decodedData?.parameters?.[0]?.valueDecoded
 
@@ -68,16 +75,30 @@ const DecodedTx = ({
 
   if (!decodedData) return null
 
+  const amount = tx?.data.value ? formatVisualAmount(tx.data.value, chain?.nativeCurrency.decimals) : '0'
+
   return (
-    <div>
+    <Stack spacing={2}>
       {!isSwapOrder && tx && showToBlock && (
-        <SendToBlock address={tx.data.to} title={getInteractionTitle(tx.data.value || '', chain)} />
+        <>
+          {amount !== '0' && (
+            <SendAmountBlock
+              amount={amount}
+              tokenInfo={{
+                type: TokenType.NATIVE_TOKEN,
+                address: ZERO_ADDRESS,
+                decimals: chain?.nativeCurrency.decimals ?? 18,
+                symbol: chain?.nativeCurrency.symbol ?? 'ETH',
+                logoUri: chain?.nativeCurrency.logoUri,
+              }}
+            />
+          )}
+          <SendToBlock address={tx.data.to} title="Interact with" name={addressInfoIndex?.[tx.data.to]?.name} />
+        </>
       )}
 
-      {isSwapOrder && tx && <SwapOrderConfirmationView order={decodedData} settlementContract={tx.data.to} />}
-
       {isMultisend && showMultisend && (
-        <Box my={2}>
+        <Box>
           <Multisend
             txData={{
               dataDecoded: decodedData,
@@ -92,7 +113,7 @@ const DecodedTx = ({
         </Box>
       )}
 
-      <Box mt={2}>
+      <Box>
         <Accordion elevation={0} onChange={onChangeExpand} sx={!tx ? { pointerEvents: 'none' } : undefined}>
           <AccordionSummary
             data-testid="decoded-tx-summary"
@@ -159,7 +180,7 @@ const DecodedTx = ({
           </AccordionDetails>
         </Accordion>
       </Box>
-    </div>
+    </Stack>
   )
 }
 

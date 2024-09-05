@@ -1,5 +1,6 @@
 import * as constants from '../../support/constants'
 import * as main from '../pages/main.page'
+import * as wallet from '../pages/create_wallet.pages'
 
 export const delegateCallWarning = '[data-testid="delegate-call-warning"]'
 export const policyChangeWarning = '[data-testid="threshold-warning"]'
@@ -31,7 +32,18 @@ const spamTokenWarningIcon = '[data-testid="warning"]'
 const untrustedTokenWarningModal = '[data-testid="untrusted-token-warning"]'
 const sendTokensBtn = '[data-testid="send-tokens-btn"]'
 export const replacementNewSigner = '[data-testid="new-owner"]'
-const messageItem = '[data-testid="message-item"]'
+export const messageItem = '[data-testid="message-item"]'
+const filterStartDateInput = '[data-testid="start-date"]'
+const filterEndDateInput = '[data-testid="end-date"]'
+const filterAmountInput = '[data-testid="amount-input"]'
+const filterTokenInput = '[data-testid="token-input"]'
+const filterNonceInput = '[data-testid="nonce-input"]'
+const filterApplyBtn = '[data-testid="apply-btn"]'
+const filterClearBtn = '[data-testid="clear-btn"]'
+const addressItem = '[data-testid="address-item"]'
+const radioSelector = 'div[role="radiogroup"]'
+const rejectTxBtn = '[data-testid="reject-btn"]'
+const deleteTxModalBtn = '[data-testid="delete-tx-btn"]'
 
 const viewTransactionBtn = 'View transaction'
 const transactionDetailsTitle = 'Transaction details'
@@ -52,6 +64,92 @@ const signBtnStr = 'Sign'
 const expandAllBtnStr = 'Expand all'
 const collapseAllBtnStr = 'Collapse all'
 export const messageNestedStr = `"nestedString": "Test message 3 off-chain"`
+const noTxFoundStr = (type) => `0 ${type} transactions found`
+const deleteFromQueueStr = 'Delete from the queue'
+
+export const filterTypes = {
+  incoming: 'Incoming',
+  outgoing: 'Outgoing',
+  module: 'Module-based',
+}
+
+function clickOnRejectBtn() {
+  cy.get(rejectTxBtn).click()
+}
+
+export function deleteTx() {
+  clickOnRejectBtn()
+  cy.get(wallet.choiceBtn).contains(deleteFromQueueStr).click()
+  cy.get(deleteTxModalBtn).click()
+}
+
+export function setTxType(type) {
+  cy.get(radioSelector).find('label').contains(type).click()
+}
+
+export function verifyNoTxDisplayed(type) {
+  cy.get(transactionItem)
+    .should('have.length', 0)
+    .then(($items) => {
+      main.verifyElementsCount($items, 0)
+    })
+
+  cy.contains(noTxFoundStr(type)).should('be.visible')
+}
+
+export function clickOnApplyBtn() {
+  cy.get(filterApplyBtn).click()
+}
+
+export function checkApplyBtnEnabled() {
+  cy.get(filterApplyBtn).should('not.be', 'disabled')
+}
+
+export function clickOnClearBtn() {
+  cy.get(filterClearBtn).click()
+}
+
+export function fillFilterForm({ address, startDate, endDate, amount, token, nonce, recipient } = {}) {
+  checkApplyBtnEnabled()
+  cy.wait(2000)
+  const inputMap = {
+    address: { selector: addressItem, findInput: true },
+    startDate: { selector: filterStartDateInput, findInput: true },
+    endDate: { selector: filterEndDateInput, findInput: true },
+    amount: { selector: filterAmountInput, findInput: true },
+    token: { selector: filterTokenInput, findInput: true },
+    nonce: { selector: filterNonceInput, findInput: true },
+    recipient: { selector: addressItem, findInput: true },
+  }
+
+  Object.entries({ address, startDate, endDate, amount, token, nonce, recipient }).forEach(([key, value]) => {
+    if (value !== undefined) {
+      const { selector, findInput } = inputMap[key]
+      const element = findInput ? cy.get(selector).find('input') : cy.get(selector)
+      element.then(($el) => {
+        cy.wrap($el).invoke('removeAttr', 'readonly').clear().type(value, { force: true })
+      })
+    }
+  })
+}
+
+export function clickOnFilterBtn() {
+  cy.get('button').then((buttons) => {
+    const filterButton = [...buttons].find((button) => {
+      return ['Filter', 'Incoming', 'Outgoing', 'Module-based'].includes(button.innerText)
+    })
+
+    if (filterButton) {
+      cy.wrap(filterButton).click()
+    } else {
+      throw new Error('No filter button found')
+    }
+  })
+}
+
+export function checkTxItemDate(index, date) {
+  cy.get(txDate).eq(index).should('contain', date)
+}
 
 export function clickOnSendTokensBtn() {
   cy.get(sendTokensBtn).click()

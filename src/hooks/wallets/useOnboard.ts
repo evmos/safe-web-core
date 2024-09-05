@@ -9,8 +9,6 @@ import { logError, Errors } from '@/services/exceptions'
 import { trackEvent, WALLET_EVENTS } from '@/services/analytics'
 import { useAppSelector } from '@/store'
 import { type EnvState, selectRpc } from '@/store/settingsSlice'
-import { E2E_WALLET_NAME } from '@/tests/e2e-wallet'
-import { ONBOARD_MPC_MODULE_LABEL } from '@/services/mpc/SocialLoginModule'
 import { formatAmount } from '@/utils/formatNumber'
 import { localItem } from '@/services/local-storage/local'
 import { isWalletConnect, isWalletUnlocked } from '@/utils/wallets'
@@ -132,18 +130,7 @@ export const connectWallet = async (
 }
 
 export const switchWallet = async (onboard: OnboardAPI) => {
-  const oldWalletLabel = getConnectedWallet(onboard.state.get().wallets)?.label
-  const newWallets = await connectWallet(onboard)
-  const newWalletLabel = newWallets ? getConnectedWallet(newWallets)?.label : undefined
-
-  // If the wallet actually changed we disconnect the old connected wallet.
-  if (!newWalletLabel || oldWalletLabel !== ONBOARD_MPC_MODULE_LABEL) {
-    return
-  }
-
-  if (newWalletLabel !== oldWalletLabel) {
-    await onboard.disconnectWallet({ label: oldWalletLabel })
-  }
+  await connectWallet(onboard)
 }
 
 const lastWalletStorage = localItem<string>('lastWallet')
@@ -192,7 +179,7 @@ export const useInitOnboard = () => {
       // e2e wallet
       if (typeof window !== 'undefined' && window.Cypress) {
         connectWallet(onboard, {
-          autoSelect: { label: E2E_WALLET_NAME, disableModals: true },
+          autoSelect: { label: 'e2e wallet', disableModals: true },
         })
       }
 

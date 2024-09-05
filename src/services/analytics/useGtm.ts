@@ -16,7 +16,7 @@ import {
 } from '@/services/analytics/gtm'
 import { spindlInit, spindlAttribute } from './spindl'
 import { useAppSelector } from '@/store'
-import { CookieType, selectCookies } from '@/store/cookiesSlice'
+import { CookieAndTermType, selectCookies } from '@/store/cookiesAndTermsSlice'
 import useChainId from '@/hooks/useChainId'
 import { useRouter } from 'next/router'
 import { AppRoutes } from '@/config/routes'
@@ -30,7 +30,7 @@ import { OVERVIEW_EVENTS } from './events'
 const useGtm = () => {
   const chainId = useChainId()
   const cookies = useAppSelector(selectCookies)
-  const isAnalyticsEnabled = cookies[CookieType.ANALYTICS] || false
+  const isAnalyticsEnabled = cookies[CookieAndTermType.ANALYTICS] || false
   const [, setPrevAnalytics] = useState(isAnalyticsEnabled)
   const router = useRouter()
   const theme = useTheme()
@@ -96,7 +96,7 @@ const useGtm = () => {
 
   useEffect(() => {
     if (wallet?.address) {
-      gtmSetUserProperty(AnalyticsUserProperties.WALLET_ADDRESS, wallet.address)
+      gtmSetUserProperty(AnalyticsUserProperties.WALLET_ADDRESS, wallet.address.slice(2)) // Remove 0x prefix
       spindlAttribute(wallet.address)
     }
   }, [wallet?.address])
