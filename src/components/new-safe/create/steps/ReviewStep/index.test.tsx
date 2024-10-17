@@ -8,6 +8,8 @@ import ReviewStep, { NetworkFee } from '@/components/new-safe/create/steps/Revie
 import * as useWallet from '@/hooks/wallets/useWallet'
 import { type ConnectedWallet } from '@/hooks/wallets/useOnboard'
 import { act, fireEvent, screen } from '@testing-library/react'
+import { LATEST_SAFE_VERSION } from '@/config/constants'
+import { type SafeVersion } from '@safe-global/safe-core-sdk-types'
 
 const mockChainInfo = {
   chainId: '100',
@@ -22,7 +24,7 @@ describe('NetworkFee', () => {
   it('should display the total fee', () => {
     jest.spyOn(useWallet, 'default').mockReturnValue({ label: 'MetaMask' } as unknown as ConnectedWallet)
     const mockTotalFee = '0.0123'
-    const result = render(<NetworkFee totalFee={mockTotalFee} chain={mockChainInfo} willRelay={true} />)
+    const result = render(<NetworkFee totalFee={mockTotalFee} chain={mockChainInfo} isWaived={true} />)
 
     expect(result.getByText(`≈ ${mockTotalFee} ${mockChainInfo.nativeCurrency.symbol}`)).toBeInTheDocument()
   })
@@ -36,9 +38,11 @@ describe('ReviewStep', () => {
   it('should display a pay now pay later option for counterfactual safe setups', () => {
     const mockData: NewSafeFormData = {
       name: 'Test',
+      networks: [mockChainInfo],
       threshold: 1,
       owners: [{ name: '', address: '0x1' }],
       saltNonce: 0,
+      safeVersion: LATEST_SAFE_VERSION as SafeVersion,
     }
     jest.spyOn(useChains, 'useHasFeature').mockReturnValue(true)
 
@@ -52,9 +56,11 @@ describe('ReviewStep', () => {
   it('should display a pay later option as selected by default for counterfactual safe setups', () => {
     const mockData: NewSafeFormData = {
       name: 'Test',
+      networks: [mockChainInfo],
       threshold: 1,
       owners: [{ name: '', address: '0x1' }],
       saltNonce: 0,
+      safeVersion: LATEST_SAFE_VERSION as SafeVersion,
     }
     jest.spyOn(useChains, 'useHasFeature').mockReturnValue(true)
 
@@ -67,9 +73,11 @@ describe('ReviewStep', () => {
   it('should not display the network fee for counterfactual safes', () => {
     const mockData: NewSafeFormData = {
       name: 'Test',
+      networks: [mockChainInfo],
       threshold: 1,
       owners: [{ name: '', address: '0x1' }],
       saltNonce: 0,
+      safeVersion: LATEST_SAFE_VERSION as SafeVersion,
     }
     jest.spyOn(useChains, 'useHasFeature').mockReturnValue(true)
 
@@ -83,9 +91,11 @@ describe('ReviewStep', () => {
   it('should not display the execution method for counterfactual safes', () => {
     const mockData: NewSafeFormData = {
       name: 'Test',
+      networks: [mockChainInfo],
       threshold: 1,
       owners: [{ name: '', address: '0x1' }],
       saltNonce: 0,
+      safeVersion: LATEST_SAFE_VERSION as SafeVersion,
     }
     jest.spyOn(useChains, 'useHasFeature').mockReturnValue(true)
 
@@ -99,9 +109,11 @@ describe('ReviewStep', () => {
   it('should display the network fee for counterfactual safes if the user selects pay now', async () => {
     const mockData: NewSafeFormData = {
       name: 'Test',
+      networks: [mockChainInfo],
       threshold: 1,
       owners: [{ name: '', address: '0x1' }],
       saltNonce: 0,
+      safeVersion: LATEST_SAFE_VERSION as SafeVersion,
     }
     jest.spyOn(useChains, 'useHasFeature').mockReturnValue(true)
 
@@ -121,9 +133,11 @@ describe('ReviewStep', () => {
   it('should display the execution method for counterfactual safes if the user selects pay now and there is relaying', async () => {
     const mockData: NewSafeFormData = {
       name: 'Test',
+      networks: [mockChainInfo],
       threshold: 1,
       owners: [{ name: '', address: '0x1' }],
       saltNonce: 0,
+      safeVersion: LATEST_SAFE_VERSION as SafeVersion,
     }
     jest.spyOn(useChains, 'useHasFeature').mockReturnValue(true)
     jest.spyOn(relay, 'hasRemainingRelays').mockReturnValue(true)
@@ -139,5 +153,42 @@ describe('ReviewStep', () => {
     })
 
     expect(getByText(/Who will pay gas fees:/)).toBeInTheDocument()
+  })
+
+  it('should display the execution method for counterfactual safes if the user selects pay now and there is relaying', async () => {
+    const mockMultiChainInfo = [
+      {
+        chainId: '100',
+        chainName: 'Gnosis Chain',
+        l2: false,
+        nativeCurrency: {
+          symbol: 'ETH',
+        },
+      },
+      {
+        chainId: '1',
+        chainName: 'Ethereum',
+        l2: false,
+        nativeCurrency: {
+          symbol: 'ETH',
+        },
+      },
+    ] as ChainInfo[]
+    const mockData: NewSafeFormData = {
+      name: 'Test',
+      networks: mockMultiChainInfo,
+      threshold: 1,
+      owners: [{ name: '', address: '0x1' }],
+      saltNonce: 0,
+      safeVersion: LATEST_SAFE_VERSION as SafeVersion,
+    }
+    jest.spyOn(useChains, 'useHasFeature').mockReturnValue(true)
+    jest.spyOn(relay, 'hasRemainingRelays').mockReturnValue(true)
+
+    const { getByText } = render(
+      <ReviewStep data={mockData} onSubmit={jest.fn()} onBack={jest.fn()} setStep={jest.fn()} />,
+    )
+
+    expect(getByText(/activate your account/)).toBeInTheDocument()
   })
 })

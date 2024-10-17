@@ -2,6 +2,8 @@ import type { PayMethod } from '@/features/counterfactual/PayNowPayLater'
 import { type RootState } from '@/store'
 import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { PredictedSafeProps } from '@safe-global/protocol-kit'
+import { selectChainIdAndSafeAddress, selectSafeAddress } from '@/store/common'
+import { type SafeVersion } from '@safe-global/safe-core-sdk-types'
 
 export enum PendingSafeStatus {
   AWAITING_EXECUTION = 'AWAITING_EXECUTION',
@@ -20,9 +22,28 @@ type UndeployedSafeStatus = {
   signerNonce?: number | null
 }
 
+export type ReplayedSafeProps = {
+  factoryAddress: string
+  masterCopy: string
+  safeAccountConfig: {
+    threshold: number
+    owners: string[]
+    fallbackHandler: string
+    to: string
+    data: string
+    paymentToken?: string
+    payment?: number
+    paymentReceiver: string
+  }
+  saltNonce: string
+  safeVersion: SafeVersion
+}
+
+export type UndeployedSafeProps = PredictedSafeProps | ReplayedSafeProps
+
 export type UndeployedSafe = {
   status: UndeployedSafeStatus
-  props: PredictedSafeProps
+  props: UndeployedSafeProps
 }
 
 type UndeployedSafesSlice = { [address: string]: UndeployedSafe }
@@ -37,7 +58,12 @@ export const undeployedSafesSlice = createSlice({
   reducers: {
     addUndeployedSafe: (
       state,
-      action: PayloadAction<{ chainId: string; address: string; type: PayMethod; safeProps: PredictedSafeProps }>,
+      action: PayloadAction<{
+        chainId: string
+        address: string
+        type: PayMethod
+        safeProps: PredictedSafeProps | ReplayedSafeProps
+      }>,
     ) => {
       const { chainId, address, type, safeProps } = action.payload
 
@@ -52,6 +78,11 @@ export const undeployedSafesSlice = createSlice({
           type,
         },
       }
+    },
+
+    addUndeployedSafes: (_, { payload }: PayloadAction<UndeployedSafesState>) => {
+      // We must return as we are overwriting the entire state
+      return payload
     },
 
     updateUndeployedSafeStatus: (
@@ -91,9 +122,18 @@ export const selectUndeployedSafes = (state: RootState): UndeployedSafesState =>
 }
 
 export const selectUndeployedSafe = createSelector(
-  [selectUndeployedSafes, (_, chainId: string, address: string) => [chainId, address]],
+  [selectUndeployedSafes, selectChainIdAndSafeAddress],
   (undeployedSafes, [chainId, address]): UndeployedSafe | undefined => {
     return undeployedSafes[chainId]?.[address]
+  },
+)
+
+export const selectUndeployedSafesByAddress = createSelector(
+  [selectUndeployedSafes, selectSafeAddress],
+  (undeployedSafes, [address]): UndeployedSafe[] => {
+    return Object.values(undeployedSafes)
+      .flatMap((value) => value[address])
+      .filter(Boolean)
   },
 )
 

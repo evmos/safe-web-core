@@ -1,29 +1,40 @@
 import { InputAdornment, Tooltip, SvgIcon, Typography, Box, Divider, Button, Grid } from '@mui/material'
-import { FormProvider, useForm } from 'react-hook-form'
+import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { useMnemonicSafeName } from '@/hooks/useMnemonicName'
 import InfoIcon from '@/public/images/notifications/info.svg'
-import NetworkSelector from '@/components/common/NetworkSelector'
 import type { StepRenderProps } from '@/components/new-safe/CardStepper/useCardStepper'
 import type { NewSafeFormData } from '@/components/new-safe/create'
-import useSyncSafeCreationStep from '@/components/new-safe/create/useSyncSafeCreationStep'
 
-import css from '@/components/new-safe/create/steps/SetNameStep/styles.module.css'
 import layoutCss from '@/components/new-safe/create/styles.module.css'
-import useIsWrongChain from '@/hooks/useIsWrongChain'
-import NetworkWarning from '@/components/new-safe/create/NetworkWarning'
 import NameInput from '@/components/common/NameInput'
 import { CREATE_SAFE_EVENTS, trackEvent } from '@/services/analytics'
 import { AppRoutes } from '@/config/routes'
 import MUILink from '@mui/material/Link'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import NoWalletConnectedWarning from '../../NoWalletConnectedWarning'
+import { type SafeVersion } from '@safe-global/safe-core-sdk-types'
+import { useCurrentChain } from '@/hooks/useChains'
+import { useEffect } from 'react'
+import { getLatestSafeVersion } from '@/utils/chains'
+import type { ChainInfo } from '@safe-global/safe-gateway-typescript-sdk'
+import { useSafeSetupHints } from '../OwnerPolicyStep/useSafeSetupHints'
+import type { CreateSafeInfoItem } from '../../CreateSafeInfos'
+import NetworkMultiSelector from '@/components/common/NetworkSelector/NetworkMultiSelector'
+import { useAppSelector } from '@/store'
+import { selectChainById } from '@/store/chainsSlice'
+import useWallet from '@/hooks/wallets/useWallet'
 
 type SetNameStepForm = {
   name: string
+  networks: ChainInfo[]
+  safeVersion: SafeVersion
 }
 
-enum SetNameStepFields {
+export enum SetNameStepFields {
   name = 'name',
+  networks = 'networks',
+  safeVersion = 'safeVersion',
 }
 
 const SET_NAME_STEP_FORM_ID = 'create-safe-set-name-step-form'
@@ -31,29 +42,47 @@ const SET_NAME_STEP_FORM_ID = 'create-safe-set-name-step-form'
 function SetNameStep({
   data,
   onSubmit,
-  setStep,
   setSafeName,
-}: StepRenderProps<NewSafeFormData> & { setSafeName: (name: string) => void }) {
+  setOverviewNetworks,
+  setDynamicHint,
+  isAdvancedFlow = false,
+}: StepRenderProps<NewSafeFormData> & {
+  setSafeName: (name: string) => void
+  setOverviewNetworks: (networks: ChainInfo[]) => void
+  setDynamicHint: (hints: CreateSafeInfoItem | undefined) => void
+  isAdvancedFlow?: boolean
+}) {
   const router = useRouter()
-  const fallbackName = useMnemonicSafeName()
-  const isWrongChain = useIsWrongChain()
-  useSyncSafeCreationStep(setStep)
+  const currentChain = useCurrentChain()
+  const wallet = useWallet()
+  const walletChain = useAppSelector((state) => selectChainById(state, wallet?.chainId || ''))
 
+  const initialState = data.networks.length ? data.networks : walletChain ? [walletChain] : []
   const formMethods = useForm<SetNameStepForm>({
     mode: 'all',
     defaultValues: {
-      [SetNameStepFields.name]: data.name,
+      ...data,
+      networks: initialState,
     },
   })
 
   const {
     handleSubmit,
+    setValue,
+    control,
     formState: { errors, isValid },
   } = formMethods
 
-  const onFormSubmit = (data: Pick<NewSafeFormData, 'name'>) => {
+  const networks: ChainInfo[] = useWatch({ control, name: SetNameStepFields.networks })
+  const isMultiChain = networks.length > 1
+  const fallbackName = useMnemonicSafeName(isMultiChain)
+  useSafeSetupHints(setDynamicHint, undefined, undefined, isMultiChain)
+
+  const onFormSubmit = (data: Pick<NewSafeFormData, 'name' | 'networks'>) => {
     const name = data.name || fallbackName
     setSafeName(name)
+    setOverviewNetworks(data.networks)
+
     onSubmit({ ...data, name })
 
     if (data.name) {
@@ -66,14 +95,19 @@ function SetNameStep({
     router.push(AppRoutes.welcome.index)
   }
 
-  const isDisabled = isWrongChain || !isValid
+  // whenever the chain switches we need to update the latest Safe version and selected chain
+  useEffect(() => {
+    setValue(SetNameStepFields.safeVersion, getLatestSafeVersion(currentChain))
+  }, [currentChain, setValue])
+
+  const isDisabled = !isValid
 
   return (
     <FormProvider {...formMethods}>
       <form onSubmit={handleSubmit(onFormSubmit)} id={SET_NAME_STEP_FORM_ID}>
         <Box className={layoutCss.row}>
           <Grid container spacing={1}>
-            <Grid item xs={12} md={8}>
+            <Grid item xs={12} md={12}>
               <NameInput
                 name={SetNameStepFields.name}
                 label={errors?.[SetNameStepFields.name]?.message || 'Name'}
@@ -94,10 +128,15 @@ function SetNameStep({
                 }}
               />
             </Grid>
-            <Grid item>
-              <Box className={css.select} data-cy="create-safe-select-network">
-                <NetworkSelector />
-              </Box>
+
+            <Grid xs={12} item>
+              <Typography variant="h5" fontWeight={700} display="inline-flex" alignItems="center" gap={1} mt={2}>
+                Select Networks
+              </Typography>
+              <Typography variant="body2" mb={2}>
+                Choose which networks you want your account to be active on. You can add more networks later.{' '}
+              </Typography>
+              <NetworkMultiSelector isAdvancedFlow={isAdvancedFlow} name={SetNameStepFields.networks} />
             </Grid>
           </Grid>
           <Typography variant="body2" mt={2}>
@@ -112,7 +151,7 @@ function SetNameStep({
             .
           </Typography>
 
-          {isWrongChain && <NetworkWarning />}
+          <NoWalletConnectedWarning />
         </Box>
         <Divider />
         <Box className={layoutCss.row}>

@@ -61,7 +61,7 @@ describe('ApprovalEditor', () => {
 
     const result = render(<ApprovalEditor safeTransaction={mockSafeTx} />)
 
-    expect(await result.queryByText('Error while decoding approval transactions.')).toBeInTheDocument()
+    expect(result.getByText('Error while decoding approval transactions.')).toBeInTheDocument()
   })
 
   it('renders a loading skeleton', async () => {
@@ -70,7 +70,7 @@ describe('ApprovalEditor', () => {
 
     const result = render(<ApprovalEditor safeTransaction={mockSafeTx} />)
 
-    expect(await result.queryByTestId('approval-editor-loading')).toBeInTheDocument()
+    expect(result.getByTestId('approval-editor-loading')).toBeInTheDocument()
   })
 
   it('renders a read-only view if the transaction contains signatures', async () => {
@@ -229,6 +229,7 @@ describe('ApprovalEditor', () => {
           to: tokenAddress,
           data: ERC20_INTERFACE.encodeFunctionData('transfer', [spenderAddress, '25']),
           value: '0',
+          operation: OperationType.Call,
         },
         {
           to: tokenAddress,
@@ -336,6 +337,7 @@ describe('ApprovalEditor', () => {
           to: tokenAddress,
           data: ERC20_INTERFACE.encodeFunctionData('transfer', [spenderAddress, '25']),
           value: '0',
+          operation: OperationType.Call,
         },
         {
           to: tokenAddress,

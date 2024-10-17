@@ -17,6 +17,7 @@ const googleSignedinBtn = '[data-testid="signed-in-account-btn"]'
 export const accountInfoHeader = '[data-testid="open-account-center"]'
 export const reviewStepOwnerInfo = '[data-testid="review-step-owner-info"]'
 const reviewStepNextBtn = '[data-testid="review-step-next-btn"]'
+const creationModalLetsGoBtn = '[data-testid="cf-creation-lets-go-btn"]'
 const safeCreationStatusInfo = '[data-testid="safe-status-info"]'
 const startUsingSafeBtn = '[data-testid="start-using-safe-btn"]'
 const sponsorIcon = '[data-testid="sponsor-icon"]'
@@ -32,10 +33,12 @@ export const choiceBtn = '[data-testid="choice-btn"]'
 const addFundsBtn = '[data-testid="add-funds-btn"]'
 const createTxBtn = '[data-testid="create-tx-btn"]'
 const qrCodeSwitch = '[data-testid="qr-code-switch"]'
-export const activateAccountBtn = '[data-testid="activate-account-btn"]'
+export const activateAccountBtn = '[data-testid="activate-account-btn-cf"]'
 const notificationsSwitch = '[data-testid="notifications-switch"]'
 export const addFundsSection = '[data-testid="add-funds-section"]'
 export const noTokensAlert = '[data-testid="no-tokens-alert"]'
+const networkCheckbox = '[data-testid="network-checkbox"]'
+const cancelIcon = '[data-testid="CancelIcon"]'
 
 const sponsorStr = 'Your account is sponsored by Goerli'
 const safeCreationProcessing = 'Transaction is being executed'
@@ -49,14 +52,20 @@ const initialSteps = '0 of 2 steps completed'
 export const addSignerStr = 'Add signer'
 export const accountRecoveryStr = 'Account recovery'
 export const sendTokensStr = 'Send tokens'
+const noWalletConnectedMsg = 'No wallet connected'
+export const deployWalletStr = 'about to deploy this Safe Account'
 
 const connectWalletBtn = '[data-testid="connect-wallet-btn"]'
+
+export function waitForConnectionMsgDisappear() {
+  cy.contains(noWalletConnectedMsg).should('not.exist')
+}
 export function checkNotificationsSwitchIs(status) {
   cy.get(notificationsSwitch).find('input').should(`be.${status}`)
 }
 
-export function clickOnActivateAccountBtn() {
-  cy.get(activateAccountBtn).click()
+export function clickOnActivateAccountBtn(index) {
+  cy.get(activateAccountBtn).eq(index).click()
 }
 
 export function clickOnQRCodeSwitch() {
@@ -117,6 +126,12 @@ export function clickOnReviewStepNextBtn() {
   cy.get(reviewStepNextBtn).click()
   cy.get(reviewStepNextBtn, { timeout: 60000 }).should('not.exist')
 }
+
+export function clickOnLetsGoBtn() {
+  cy.get(creationModalLetsGoBtn).click()
+  cy.get(creationModalLetsGoBtn, { timeout: 60000 }).should('not.exist')
+}
+
 export function verifyOwnerInfoIsPresent() {
   return cy.get(reviewStepOwnerInfo).shoul('exist')
 }
@@ -175,7 +190,18 @@ export function selectNetwork(network) {
   cy.get(expandMoreIcon).parents('div').eq(1).click()
   cy.wait(1000)
   let regex = new RegExp(`^${network}$`)
-  cy.get('li').contains(regex).click()
+  cy.get('li').parents('ul').contains(regex).click()
+}
+
+export function selectMultiNetwork(index, network) {
+  cy.get('input').eq(index).click()
+  cy.get('input').eq(index).type(network)
+  cy.get(networkCheckbox).eq(0).click()
+}
+
+export function clearNetworkInput(index) {
+  cy.get('input').eq(index).click()
+  cy.get(cancelIcon).click()
 }
 
 export function clickOnNextBtn() {
@@ -251,8 +277,8 @@ export function verifyThresholdStringInSummaryStep(startThreshold, endThreshold)
   cy.contains(`${startThreshold} out of ${endThreshold}`)
 }
 
-export function verifyNetworkInSummaryStep(network) {
-  cy.get('div').contains('Name').parent().parent().contains(network)
+export function verifySafeNetworkNameInSummaryStep(name) {
+  cy.get('div').contains('Name').parent().parent().contains(name)
 }
 
 export function verifyEstimatedFeeInSummaryStep() {

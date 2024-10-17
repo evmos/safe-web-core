@@ -1,5 +1,4 @@
 import useWallet from '@/hooks/wallets/useWallet'
-import { assertWalletChain } from '@/services/tx/tx-sender/sdk'
 import type { ReactElement, SyntheticEvent } from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { type BigNumberish, type BytesLike, parseUnits } from 'ethers'
@@ -21,13 +20,15 @@ import { dispatchSpendingLimitTxExecution } from '@/services/tx/tx-sender'
 import { getTxOptions } from '@/utils/transactions'
 import { MODALS_EVENTS, trackEvent } from '@/services/analytics'
 import useOnboard from '@/hooks/wallets/useOnboard'
-import { WrongChainWarning } from '@/components/tx/WrongChainWarning'
 import { asError } from '@/services/exceptions/utils'
 import TxCard from '@/components/tx-flow/common/TxCard'
 import { TxModalContext } from '@/components/tx-flow'
 import { type SubmitCallback } from '@/components/tx/SignOrExecuteForm'
 import { TX_EVENTS, TX_TYPES } from '@/services/analytics/events/transactions'
 import { isWalletRejection } from '@/utils/wallets'
+import { safeParseUnits } from '@/utils/formatters'
+import CheckWallet from '@/components/common/CheckWallet'
+import NetworkWarning from '@/components/new-safe/create/NetworkWarning'
 
 export type SpendingLimitTxParams = {
   safeAddress: string
@@ -58,6 +59,11 @@ const ReviewSpendingLimitTx = ({
   const { balances } = useBalances()
   const token = balances.items.find((item) => item.tokenInfo.address === params.tokenAddress)
   const spendingLimit = useSpendingLimit(token?.tokenInfo)
+
+  const amountInWei = useMemo(
+    () => safeParseUnits(params.amount, token?.tokenInfo.decimals)?.toString() || '0',
+    [params.amount, token?.tokenInfo.decimals],
+  )
 
   const txParams: SpendingLimitTxParams = useMemo(
     () => ({
@@ -97,7 +103,6 @@ const ReviewSpendingLimitTx = ({
     const txOptions = getTxOptions(advancedParams, currentChain)
 
     try {
-      await assertWalletChain(onboard, safe.chainId)
       await dispatchSpendingLimitTxExecution(txParams, txOptions, wallet.provider, safe.chainId, safeAddress)
       onSubmit('', true)
       setTxFlow(undefined)
@@ -110,10 +115,11 @@ const ReviewSpendingLimitTx = ({
         setSubmitError(err)
       }
       setIsSubmittable(true)
+      return
     }
 
-    trackEvent({ ...TX_EVENTS.CREATE, label: TX_TYPES.transfer_token })
-    trackEvent({ ...TX_EVENTS.EXECUTE, label: TX_TYPES.transfer_token })
+    trackEvent({ ...TX_EVENTS.CREATE_VIA_SPENDING_LIMTI, label: TX_TYPES.transfer_token })
+    trackEvent({ ...TX_EVENTS.EXECUTE_VIA_SPENDING_LIMIT, label: TX_TYPES.transfer_token })
   }
 
   const submitDisabled = !isSubmittable || gasLimitLoading
@@ -127,13 +133,13 @@ const ReviewSpendingLimitTx = ({
           Blockchain Explorer.
         </Typography>
 
-        {token && <SendAmountBlock amount={params.amount} tokenInfo={token.tokenInfo} />}
+        {token && <SendAmountBlock amountInWei={amountInWei} tokenInfo={token.tokenInfo} />}
 
         <SendToBlock address={params.recipient} />
 
         <AdvancedParams params={advancedParams} willExecute={true} onFormSubmit={setManualParams} />
 
-        <WrongChainWarning />
+        <NetworkWarning />
 
         {submitError && (
           <ErrorMessage error={submitError}>Error submitting the transaction. Please try again.</ErrorMessage>
@@ -146,9 +152,13 @@ const ReviewSpendingLimitTx = ({
         </Typography>
 
         <CardActions>
-          <Button variant="contained" type="submit" disabled={submitDisabled}>
-            Submit
-          </Button>
+          <CheckWallet allowNonOwner checkNetwork={!submitDisabled}>
+            {(isOk) => (
+              <Button variant="contained" type="submit" disabled={!isOk || submitDisabled}>
+                Submit
+              </Button>
+            )}
+          </CheckWallet>
         </CardActions>
       </TxCard>
     </form>

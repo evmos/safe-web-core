@@ -1,3 +1,4 @@
+import { isMultisigExecutionInfo } from '@/utils/transaction-guards'
 import { useCallback } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store'
 import useChainId from './useChainId'
@@ -7,6 +8,7 @@ import { selectBatchBySafe, addTx, removeTx } from '@/store/batchSlice'
 import { type TransactionDetails } from '@safe-global/safe-gateway-typescript-sdk'
 import { BATCH_EVENTS, trackEvent } from '@/services/analytics'
 import { txDispatch, TxEvent } from '@/services/tx/txEvents'
+import { shallowEqual } from 'react-redux'
 
 export const useUpdateBatch = () => {
   const chainId = useChainId()
@@ -23,7 +25,9 @@ export const useUpdateBatch = () => {
         }),
       )
 
-      txDispatch(TxEvent.BATCH_ADD, { txId: txDetails.txId })
+      if (isMultisigExecutionInfo(txDetails.detailedExecutionInfo)) {
+        txDispatch(TxEvent.BATCH_ADD, { txId: txDetails.txId, nonce: txDetails.detailedExecutionInfo.nonce })
+      }
 
       trackEvent({ ...BATCH_EVENTS.BATCH_TX_APPENDED, label: txDetails.txInfo.type })
     },
@@ -49,6 +53,6 @@ export const useUpdateBatch = () => {
 export const useDraftBatch = (): DraftBatchItem[] => {
   const chainId = useChainId()
   const safeAddress = useSafeAddress()
-  const batch = useAppSelector((state) => selectBatchBySafe(state, chainId, safeAddress))
+  const batch = useAppSelector((state) => selectBatchBySafe(state, chainId, safeAddress), shallowEqual)
   return batch
 }

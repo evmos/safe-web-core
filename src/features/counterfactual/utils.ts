@@ -1,22 +1,25 @@
-import type { NewSafeFormData } from '@/components/new-safe/create'
-import { LATEST_SAFE_VERSION, POLLING_INTERVAL } from '@/config/constants'
-import { AppRoutes } from '@/config/routes'
-import { PayMethod } from '@/features/counterfactual/PayNowPayLater'
+import { getLatestSafeVersion } from '@/utils/chains'
+import { POLLING_INTERVAL } from '@/config/constants'
+import type { PayMethod } from '@/features/counterfactual/PayNowPayLater'
 import { safeCreationDispatch, SafeCreationEvent } from '@/features/counterfactual/services/safeCreationEvents'
-import { addUndeployedSafe } from '@/features/counterfactual/store/undeployedSafesSlice'
+import {
+  addUndeployedSafe,
+  type UndeployedSafeProps,
+  type ReplayedSafeProps,
+  type UndeployedSafe,
+  PendingSafeStatus,
+} from '@/features/counterfactual/store/undeployedSafesSlice'
 import { type ConnectedWallet } from '@/hooks/wallets/useOnboard'
-import { createWeb3, getWeb3ReadOnly } from '@/hooks/wallets/web3'
+import { getWeb3ReadOnly } from '@/hooks/wallets/web3'
 import { asError } from '@/services/exceptions/utils'
 import ExternalStore from '@/services/ExternalStore'
-import { getUncheckedSafeSDK, tryOffChainTxSigning } from '@/services/tx/tx-sender/sdk'
+import { getSafeSDKWithSigner, getUncheckedSigner, tryOffChainTxSigning } from '@/services/tx/tx-sender/sdk'
 import { getRelayTxStatus, TaskState } from '@/services/tx/txMonitor'
 import type { AppDispatch } from '@/store'
-import { addOrUpdateSafe } from '@/store/addedSafesSlice'
-import { upsertAddressBookEntry } from '@/store/addressBookSlice'
 import { defaultSafeInfo } from '@/store/safeInfoSlice'
 import { didRevert, type EthersError } from '@/utils/ethers-utils'
 import { assertProvider, assertTx, assertWallet } from '@/utils/helpers'
-import type { DeploySafeProps, PredictedSafeProps } from '@safe-global/protocol-kit'
+import { type DeploySafeProps, type PredictedSafeProps } from '@safe-global/protocol-kit'
 import { ZERO_ADDRESS } from '@safe-global/protocol-kit/dist/src/utils/constants'
 import type { SafeTransaction, SafeVersion, TransactionOptions } from '@safe-global/safe-core-sdk-types'
 import {
@@ -26,19 +29,29 @@ import {
   TokenType,
 } from '@safe-global/safe-gateway-typescript-sdk'
 import type { BrowserProvider, ContractTransactionResponse, Eip1193Provider, Provider } from 'ethers'
-import type { NextRouter } from 'next/router'
+import { getSafeL2SingletonDeployments, getSafeSingletonDeployments } from '@safe-global/safe-deployments'
+import { sameAddress } from '@/utils/addresses'
 
-export const getUndeployedSafeInfo = (undeployedSafe: PredictedSafeProps, address: string, chainId: string) => {
+import { encodeSafeCreationTx } from '@/components/new-safe/create/logic'
+
+export const getUndeployedSafeInfo = (undeployedSafe: UndeployedSafe, address: string, chain: ChainInfo) => {
+  const safeSetup = extractCounterfactualSafeSetup(undeployedSafe, chain.chainId)
+
+  if (!safeSetup) {
+    throw Error('Could not determine Safe Setup.')
+  }
+  const latestSafeVersion = getLatestSafeVersion(chain)
+
   return {
     ...defaultSafeInfo,
     address: { value: address },
-    chainId,
-    owners: undeployedSafe.safeAccountConfig.owners.map((owner) => ({ value: owner })),
+    chainId: chain.chainId,
+    owners: safeSetup.owners.map((owner) => ({ value: owner })),
     nonce: 0,
-    threshold: undeployedSafe.safeAccountConfig.threshold,
+    threshold: safeSetup.threshold,
     implementationVersionState: ImplementationVersionState.UP_TO_DATE,
-    fallbackHandler: { value: undeployedSafe.safeAccountConfig.fallbackHandler! },
-    version: undeployedSafe.safeDeploymentConfig?.safeVersion || LATEST_SAFE_VERSION,
+    fallbackHandler: { value: safeSetup.fallbackHandler! },
+    version: safeSetup?.safeVersion || latestSafeVersion,
     deployed: false,
   }
 }
@@ -51,17 +64,15 @@ export const dispatchTxExecutionAndDeploySafe = async (
   provider: Eip1193Provider,
   safeAddress: string,
 ) => {
-  const sdkUnchecked = await getUncheckedSafeSDK(provider)
+  const sdk = await getSafeSDKWithSigner(provider)
   const eventParams = { groupKey: CF_TX_GROUP_KEY }
 
   let result: ContractTransactionResponse | undefined
   try {
-    const signedTx = await tryOffChainTxSigning(safeTx, await sdkUnchecked.getContractVersion(), sdkUnchecked)
+    const signedTx = await tryOffChainTxSigning(safeTx, await sdk.getContractVersion(), sdk)
+    const signer = await getUncheckedSigner(provider)
 
-    const browserProvider = createWeb3(provider)
-    const signer = await browserProvider.getSigner()
-
-    const deploymentTx = await sdkUnchecked.wrapSafeTransactionIntoDeploymentBatch(signedTx, txOptions)
+    const deploymentTx = await sdk.wrapSafeTransactionIntoDeploymentBatch(signedTx, txOptions)
 
     // We need to estimate the actual gasLimit after the user has signed since it is more accurate than what useDeployGasLimit returns
     const gas = await signer.estimateGas({ data: deploymentTx.data, value: deploymentTx.value, to: deploymentTx.to })
@@ -132,48 +143,36 @@ export const getCounterfactualBalance = async (
   }
 }
 
-export const createCounterfactualSafe = (
-  chain: ChainInfo,
+export const replayCounterfactualSafeDeployment = (
+  chainId: string,
   safeAddress: string,
-  saltNonce: string,
-  data: NewSafeFormData,
+  replayedSafeProps: ReplayedSafeProps,
+  name: string,
   dispatch: AppDispatch,
-  props: DeploySafeProps,
-  router: NextRouter,
+  payMethod: PayMethod,
 ) => {
   const undeployedSafe = {
-    chainId: chain.chainId,
+    chainId,
     address: safeAddress,
-    type: PayMethod.PayLater,
-    safeProps: {
-      safeAccountConfig: props.safeAccountConfig,
-      safeDeploymentConfig: {
-        saltNonce,
-        safeVersion: LATEST_SAFE_VERSION as SafeVersion,
+    type: payMethod,
+    safeProps: replayedSafeProps,
+  }
+
+  const setup = extractCounterfactualSafeSetup(
+    {
+      props: replayedSafeProps,
+      status: {
+        status: PendingSafeStatus.AWAITING_EXECUTION,
+        type: payMethod,
       },
     },
+    chainId,
+  )
+  if (!setup) {
+    throw Error('Safe Setup could not be decoded')
   }
 
   dispatch(addUndeployedSafe(undeployedSafe))
-  dispatch(upsertAddressBookEntry({ chainId: chain.chainId, address: safeAddress, name: data.name }))
-  dispatch(
-    addOrUpdateSafe({
-      safe: {
-        ...defaultSafeInfo,
-        address: { value: safeAddress, name: data.name },
-        threshold: data.threshold,
-        owners: data.owners.map((owner) => ({
-          value: owner.address,
-          name: owner.name || owner.ens,
-        })),
-        chainId: chain.chainId,
-      },
-    }),
-  )
-  return router.push({
-    pathname: AppRoutes.home,
-    query: { safe: `${chain.shortName}:${safeAddress}` },
-  })
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -186,7 +185,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
  * @param txHash
  * @param maxAttempts
  */
-async function retryGetTransaction(provider: Provider, txHash: string, maxAttempts = 6) {
+async function retryGetTransaction(provider: Provider, txHash: string, maxAttempts = 8) {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const txResponse = await provider.getTransaction(txHash)
     if (txResponse !== null) {
@@ -204,6 +203,8 @@ export const checkSafeActivation = async (
   provider: Provider,
   txHash: string,
   safeAddress: string,
+  type: PayMethod,
+  chainId: string,
   startBlock?: number,
 ) => {
   try {
@@ -228,6 +229,8 @@ export const checkSafeActivation = async (
     safeCreationDispatch(SafeCreationEvent.SUCCESS, {
       groupKey: CF_TX_GROUP_KEY,
       safeAddress,
+      type,
+      chainId,
     })
   } catch (err) {
     const _err = err as EthersError
@@ -236,6 +239,8 @@ export const checkSafeActivation = async (
       safeCreationDispatch(SafeCreationEvent.SUCCESS, {
         groupKey: CF_TX_GROUP_KEY,
         safeAddress,
+        type,
+        chainId,
       })
       return
     }
@@ -257,7 +262,7 @@ export const checkSafeActivation = async (
   }
 }
 
-export const checkSafeActionViaRelay = (taskId: string, safeAddress: string) => {
+export const checkSafeActionViaRelay = (taskId: string, safeAddress: string, type: PayMethod, chainId: string) => {
   const TIMEOUT_TIME = 2 * 60 * 1000 // 2 minutes
 
   let intervalId: NodeJS.Timeout
@@ -274,6 +279,8 @@ export const checkSafeActionViaRelay = (taskId: string, safeAddress: string) => 
         safeCreationDispatch(SafeCreationEvent.SUCCESS, {
           groupKey: CF_TX_GROUP_KEY,
           safeAddress,
+          type,
+          chainId,
         })
         break
       case TaskState.ExecReverted:
@@ -304,4 +311,87 @@ export const checkSafeActionViaRelay = (taskId: string, safeAddress: string) => 
 
     clearInterval(intervalId)
   }, TIMEOUT_TIME)
+}
+
+export const isReplayedSafeProps = (props: UndeployedSafeProps): props is ReplayedSafeProps =>
+  'safeAccountConfig' in props && 'masterCopy' in props && 'factoryAddress' in props && 'saltNonce' in props
+
+export const isPredictedSafeProps = (props: UndeployedSafeProps): props is PredictedSafeProps =>
+  'safeAccountConfig' in props && !('masterCopy' in props)
+
+export const determineMasterCopyVersion = (masterCopy: string, chainId: string): SafeVersion | undefined => {
+  const SAFE_VERSIONS: SafeVersion[] = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0']
+  return SAFE_VERSIONS.find((version) => {
+    const isL1Singleton = () => {
+      const deployments = getSafeSingletonDeployments({ version })?.networkAddresses[chainId]
+
+      if (Array.isArray(deployments)) {
+        return deployments.some((deployment) => sameAddress(masterCopy, deployment))
+      }
+      return sameAddress(masterCopy, deployments)
+    }
+
+    const isL2Singleton = () => {
+      const deployments = getSafeL2SingletonDeployments({ version })?.networkAddresses[chainId]
+
+      if (Array.isArray(deployments)) {
+        return deployments.some((deployment) => sameAddress(masterCopy, deployment))
+      }
+      return sameAddress(masterCopy, deployments)
+    }
+
+    return isL1Singleton() || isL2Singleton()
+  })
+}
+
+export const extractCounterfactualSafeSetup = (
+  undeployedSafe: UndeployedSafe | undefined,
+  chainId: string | undefined,
+):
+  | {
+      owners: string[]
+      threshold: number
+      fallbackHandler: string | undefined
+      safeVersion: SafeVersion | undefined
+      saltNonce: string | undefined
+    }
+  | undefined => {
+  if (!undeployedSafe || !chainId) {
+    return undefined
+  }
+  if (isPredictedSafeProps(undeployedSafe.props)) {
+    return {
+      owners: undeployedSafe.props.safeAccountConfig.owners,
+      threshold: undeployedSafe.props.safeAccountConfig.threshold,
+      fallbackHandler: undeployedSafe.props.safeAccountConfig.fallbackHandler,
+      safeVersion: undeployedSafe.props.safeDeploymentConfig?.safeVersion,
+      saltNonce: undeployedSafe.props.safeDeploymentConfig?.saltNonce,
+    }
+  } else {
+    const { owners, threshold, fallbackHandler } = undeployedSafe.props.safeAccountConfig
+
+    return {
+      owners,
+      threshold: Number(threshold),
+      fallbackHandler,
+      safeVersion: undeployedSafe.props.safeVersion,
+      saltNonce: undeployedSafe.props.saltNonce,
+    }
+  }
+}
+
+export const activateReplayedSafe = async (
+  chain: ChainInfo,
+  props: ReplayedSafeProps,
+  provider: BrowserProvider,
+  options: DeploySafeProps['options'],
+) => {
+  const data = encodeSafeCreationTx(props, chain)
+
+  return (await provider.getSigner()).sendTransaction({
+    ...options,
+    to: props.factoryAddress,
+    data,
+    value: '0',
+  })
 }

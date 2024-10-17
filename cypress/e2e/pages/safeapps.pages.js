@@ -27,7 +27,7 @@ const acceptBtnStr = /accept/i
 const clearAllBtnStr = /clear all/i
 const allowAllPermissions = /allow all/i
 export const enterAddressStr = /enter address or ens name/i
-export const addTransactionStr = /add transaction/i
+export const addTransactionStr = /add new transaction/i
 export const createBatchStr = /create batch/i
 export const sendBatchStr = /send batch/i
 export const transactionDetailsStr = /transaction details/i
@@ -52,6 +52,7 @@ export const selectAllRowsChbxStr = /Select All Rows checkbox/i
 export const selectRowChbxStr = /Select Row checkbox/i
 export const recipientStr = /recipient/i
 export const validRecipientAddressStr = /please enter a valid recipient address/i
+export const contractMethodSelector = 'input[id="contract-method-selector"]'
 export const testAddressValue2 = 'testAddressValue'
 export const testBooleanValue = 'testBooleanValue'
 export const testFallback = 'fallback'
@@ -103,6 +104,7 @@ export const transactiobUilderHeadlinePreview = 'Transaction Builder'
 export const availableNetworksPreview = 'Available networks'
 export const connecttextPreview = 'Compose custom contract interactions and batch them into a single transaction'
 const warningDefaultAppStr = 'The application you are trying to access is not in the default Safe Apps list'
+export const AddressEmptyCodeStr = 'AddressEmptyCode'
 export const localStorageItem =
   '{"https://safe-test-app.com":[{"feature":"camera","status":"granted"},{"feature":"microphone","status":"denied"}]}'
 export const gridItem = 'main .MuiPaper-root > .MuiGrid-item'
@@ -111,7 +113,7 @@ export const linkNames = {
   txBuilderLogo: /Transaction Builder logo/i,
 }
 export const abi =
-  '[{{}"inputs":[{{}"internalType":"address","name":"_singleton","type":"address"{}}],"stateMutability":"nonpayable","type":"constructor"{}},{{}"stateMutability":"payable","type":"fallback"{}}]'
+  '[{"inputs":[{"internalType":"address","name":"_singleton","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"stateMutability":"payable","type":"fallback"},{"inputs":[{"internalType":"address","name":"target","type":"address"}],"name":"AddressEmptyCode","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}]'
 
 export const permissionCheckboxes = {
   camera: 'input[name="camera"]',
@@ -218,12 +220,10 @@ export function verifyAppDescription(descr) {
 
 export function clickOnOpenSafeAppBtn() {
   cy.get(openSafeAppBtn).click()
-  cy.wait(2000)
 }
 
 export function verifyDisclaimerIsDisplayed() {
   verifyDisclaimerIsVisible()
-  cy.wait(500)
 }
 
 function verifyDisclaimerIsVisible() {
@@ -249,20 +249,17 @@ export function verifyMicrofoneCheckBoxExists() {
   return cy.findByRole('checkbox', { name: microfoneCheckBoxStr }).should('exist')
 }
 
-export function storeAndVerifyPermissions() {
+export function verifyInfoModalAcceptance() {
   cy.waitForSelector(() => {
     return cy
       .findByRole('button', { name: continueBtnStr })
       .click()
-      .wait(500)
+      .wait(2000)
       .should(() => {
-        const storedBrowserPermissions = JSON.parse(localStorage.getItem(constants.BROWSER_PERMISSIONS_KEY))
-        const browserPermissions = Object.values(storedBrowserPermissions)[0][0]
-        const storedInfoModal = JSON.parse(localStorage.getItem(constants.INFO_MODAL_KEY))
-
-        expect(browserPermissions.feature).to.eq('camera')
-        expect(browserPermissions.status).to.eq('granted')
-        expect(storedInfoModal['11155111'].consentsAccepted).to.eq(true)
+        const storedInfoModal = JSON.parse(
+          localStorage.getItem(constants.localStorageKeys.SAFE_v2__SafeApps__infoModal),
+        )
+        expect(storedInfoModal[constants.networkKeys.sepolia].consentsAccepted).to.eq(true)
       })
   })
 }

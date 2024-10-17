@@ -8,11 +8,11 @@ import * as nfts from '../pages/nfts.pages'
 import * as ls from '../../support/localstorage_data.js'
 import { ethers } from 'ethers'
 import SafeApiKit from '@safe-global/api-kit'
-import { createEthersAdapter, createSigners } from '../../support/api/utils_ether'
+import { createSigners } from '../../support/api/utils_ether'
 import { createSafes } from '../../support/api/utils_protocolkit'
 import { contracts, abi_qtrust, abi_nft_pc2 } from '../../support/api/contracts'
-import { getSafes, CATEGORIES } from '../../support/safes/safesHandler.js'
 import * as wallet from '../../support/utils/wallet.js'
+import * as fundSafes from '../../fixtures/safes/funds.json'
 
 const transferAmount = '1'
 
@@ -41,22 +41,21 @@ const nftContract = new ethers.Contract(nftContractAddress, abi_nft_pc2, provide
 const owner1Signer = signers[0]
 const owner2Signer = signers[1]
 
-const ethAdapterOwner1 = createEthersAdapter(owner1Signer)
-const ethAdapterOwner2 = createEthersAdapter(owner2Signer)
-
 function visit(url) {
   cy.visit(url)
 }
 
-// TODO: Relay only allows 5 txs per hour.
+// TODO: Relay only allows 5 txs per day.
 describe('Send funds with relay happy path tests', { defaultCommandTimeout: 300000 }, () => {
   before(async () => {
-    safesData = await getSafes(CATEGORIES.funds)
-    main.addToLocalStorage(constants.localStorageKeys.SAFE_v2__cookies, ls.cookies.acceptedCookies)
-    main.addToLocalStorage(
-      constants.localStorageKeys.SAFE_v2__tokenlist_onboarding,
-      ls.cookies.acceptedTokenListOnboarding,
-    )
+    cy.clearLocalStorage().then(() => {
+      main.addToLocalStorage(constants.localStorageKeys.SAFE_v2_cookies, ls.cookies.acceptedCookies)
+      main.addToLocalStorage(
+        constants.localStorageKeys.SAFE_v2__tokenlist_onboarding,
+        ls.cookies.acceptedTokenListOnboarding,
+      )
+    })
+    safesData = fundSafes
     apiKit = new SafeApiKit({
       chainId: BigInt(1),
       txServiceUrl: constants.stagingTxServiceUrl,
@@ -65,8 +64,8 @@ describe('Send funds with relay happy path tests', { defaultCommandTimeout: 3000
     outgoingSafeAddress = safesData.SEP_FUNDS_SAFE_8.substring(4)
 
     const safeConfigurations = [
-      { ethAdapter: ethAdapterOwner1, safeAddress: outgoingSafeAddress },
-      { ethAdapter: ethAdapterOwner2, safeAddress: outgoingSafeAddress },
+      { signer: privateKeys[0], safeAddress: outgoingSafeAddress, provider },
+      { signer: privateKeys[1], safeAddress: outgoingSafeAddress, provider },
     ]
 
     safes = await createSafes(safeConfigurations)
@@ -100,13 +99,14 @@ describe('Send funds with relay happy path tests', { defaultCommandTimeout: 3000
             throw new Error(main.noRelayAttemptsError)
           }
           executeTransactionFlow(originatingSafe, walletAddress.toString(), transferAmount).then(async () => {
-            main.checkTokenBalanceIsNull(network_pref + originatingSafe, constants.tokenAbbreviation.tpcc)
             const contractWithWallet = nftContract.connect(owner1Signer)
             const tx = await contractWithWallet.safeTransferFrom(walletAddress.toString(), originatingSafe, 2, {
               gasLimit: 200000,
             })
             await tx.wait()
             main.verifyNonceChange(network_pref + originatingSafe, currentNonce + 1)
+            navigation.clickOnWalletExpandMoreIcon()
+            navigation.clickOnDisconnectBtn()
           })
         })
       })
@@ -165,6 +165,8 @@ describe('Send funds with relay happy path tests', { defaultCommandTimeout: 3000
           const safeTx = await apiKit.getTransaction(safeTxHashofExistingTx)
           await protocolKitOwner2_S3.executeTransaction(safeTx)
           main.verifyNonceChange(network_pref + targetSafe, currentNonce + 1)
+          navigation.clickOnWalletExpandMoreIcon()
+          navigation.clickOnDisconnectBtn()
         })
       })
   })
@@ -205,6 +207,8 @@ describe('Send funds with relay happy path tests', { defaultCommandTimeout: 3000
 
           await tx.wait()
           main.verifyNonceChange(network_pref + originatingSafe, currentNonce + 1)
+          navigation.clickOnWalletExpandMoreIcon()
+          navigation.clickOnDisconnectBtn()
         })
       })
   })

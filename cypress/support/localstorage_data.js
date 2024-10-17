@@ -1,4 +1,15 @@
 /* eslint-disable */
+
+import { CURRENT_COOKIE_TERMS_VERSION } from './constants.js'
+
+const cookieState = {
+  necessary: true,
+  updates: true,
+  analytics: true,
+  terms: true,
+  termsVersion: CURRENT_COOKIE_TERMS_VERSION,
+}
+
 export const batchData = {
   entry0: {
     11155111: {
@@ -111,7 +122,7 @@ export const batchData = {
                 logoUri: null,
               },
               direction: 'OUTGOING',
-              transferInfo: { type: 'NATIVE_COIN', value: '1000000000000000' },
+              transferInfo: { type: 'NATIVE_COIN', value: '2000000000000000' },
             },
             txData: {
               hexData: null,
@@ -335,6 +346,11 @@ export const addressBookData = {
       '0x6a5602335a878ADDCa4BF63a050E34946B56B5bC': 'BB Safe',
     },
   },
+  autofillData: {
+    11155111: {
+      '0x01A9F68e339da12565cfBc47fe7D6EdEcB11C46f': 'David',
+    },
+  },
   sameOwnerName: {
     11155111: {
       '0xC16Db0251654C0a72E91B190d81eAD367d2C6fED': 'Automation owner Sepolia',
@@ -374,7 +390,7 @@ export const addressBookData = {
       '0xc2F3645bfd395516d1a18CA6ad9298299d328C01': 'Safe 27',
     },
   },
-  cookies: { necessary: true, updates: true, analytics: true },
+  cookies: cookieState,
 }
 
 export const safeSettings = {
@@ -657,6 +673,13 @@ export const customApps = (url) => ({
   },
 })
 
+const infoModalAccepted = {
+  11155111: {
+    consentsAccepted: true,
+    warningCheckedCustomApps: [],
+  },
+}
+
 export const appPermissions = (url) => ({
   grantedPermissions: {
     [url]: [
@@ -664,27 +687,33 @@ export const appPermissions = (url) => ({
       { feature: 'microphone', status: 'granted' },
     ],
   },
-  infoModalAccepted: { 11155111: { consentsAccepted: true, warningCheckedCustomApps: [] } },
+  infoModalAccepted: JSON.stringify(infoModalAccepted),
 })
 
 export const cookies = {
-  acceptedCookies: { necessary: true, updates: true, analytics: true },
+  acceptedCookies: JSON.stringify(cookieState),
   acceptedTokenListOnboarding: true,
 }
 
 export const undeployedSafe = {
   safe1: {
     11155111: {
-      '0xe41D568F5040FD9adeE8B64200c6B7C363C68c41': {
+      '0x926186108f74dB20BFeb2b6c888E523C78cb7E00': {
         props: {
           safeAccountConfig: {
             threshold: 1,
-            owners: ['0xC16Db0251654C0a72E91B190d81eAD367d2C6fED'],
+            owners: ['0x9445deb174C1eCbbfce8d31D33F438B8e7a0F1BA'],
             fallbackHandler: '0x017062a1dE2FE6b99BE3d9d37841FeD19F573804',
           },
-          safeDeploymentConfig: { saltNonce: '20', safeVersion: '1.3.0' },
+          safeDeploymentConfig: {
+            saltNonce: '21',
+            safeVersion: '1.3.0',
+          },
         },
-        status: { status: 'AWAITING_EXECUTION' },
+        status: {
+          status: 'AWAITING_EXECUTION',
+          type: 'PayLater',
+        },
       },
     },
   },

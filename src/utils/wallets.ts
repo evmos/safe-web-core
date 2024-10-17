@@ -1,9 +1,11 @@
 import type { EthersError } from '@/utils/ethers-utils'
 import { type ConnectedWallet } from '@/hooks/wallets/useOnboard'
-import { getWeb3ReadOnly, isSmartContract } from '@/hooks/wallets/web3'
+import { getWeb3ReadOnly } from '@/hooks/wallets/web3'
 import { WALLET_KEYS } from '@/hooks/wallets/consts'
+import { EMPTY_DATA } from '@safe-global/protocol-kit/dist/src/utils/constants'
 import memoize from 'lodash/memoize'
 import { PRIVATE_KEY_MODULE_LABEL } from '@/services/private-key-module'
+import { type JsonRpcProvider } from 'ethers'
 
 const WALLETCONNECT = 'WalletConnect'
 
@@ -33,15 +35,21 @@ export const isHardwareWallet = (wallet: ConnectedWallet): boolean => {
   )
 }
 
+export const isSmartContract = async (address: string, provider?: JsonRpcProvider): Promise<boolean> => {
+  const web3 = provider ?? getWeb3ReadOnly()
+
+  if (!web3) {
+    throw new Error('Provider not found')
+  }
+
+  const code = await web3.getCode(address)
+
+  return code !== EMPTY_DATA
+}
+
 export const isSmartContractWallet = memoize(
-  async (_chainId: string, address: string) => {
-    const provider = getWeb3ReadOnly()
-
-    if (!provider) {
-      throw new Error('Provider not found')
-    }
-
-    return isSmartContract(provider, address)
+  async (_chainId: string, address: string): Promise<boolean> => {
+    return isSmartContract(address)
   },
   (chainId, address) => chainId + address,
 )

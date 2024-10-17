@@ -38,10 +38,12 @@ enum ErrorCodes {
   _616 = '616: Failed to retrieve recommended nonce',
   _619 = '619: Error fetching data from master-copies',
   _620 = '620: Error loading chains',
-  _630 = '630: Error fetching remaining hourly relays',
+  _630 = '630: Error fetching remaining daily relays',
   _631 = '631: Transaction failed to be relayed',
   _632 = '632: Error fetching relay task status',
   _633 = '633: Notification (un-)registration failed',
+  _640 = '640: User account not found',
+  _641 = '641: Error creating user account',
 
   _700 = '700: Failed to read from local/session storage',
   _701 = '701: Failed to write to local/session storage',
@@ -67,6 +69,7 @@ enum ErrorCodes {
   _813 = '813: Failed to cancel recovery',
   _814 = '814: Failed to speed up transaction',
   _815 = '815: Error executing a transaction through a role',
+  _816 = '816: Error computing replay Safe creation data',
 
   _900 = '900: Error loading Safe App',
   _901 = '901: Error processing Safe Apps SDK request',

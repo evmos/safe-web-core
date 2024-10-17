@@ -4,9 +4,15 @@ import type { CheckboxProps } from '@mui/material'
 import { Grid, Button, Checkbox, FormControlLabel, Typography, Paper, SvgIcon, Box } from '@mui/material'
 import WarningIcon from '@/public/images/notifications/warning.svg'
 import { useForm } from 'react-hook-form'
+import { metadata } from '@/markdown/terms/terms.md'
 
 import { useAppDispatch, useAppSelector } from '@/store'
-import { selectCookies, CookieAndTermType, saveCookieAndTermConsent } from '@/store/cookiesAndTermsSlice'
+import {
+  selectCookies,
+  CookieAndTermType,
+  saveCookieAndTermConsent,
+  hasAcceptedTerms,
+} from '@/store/cookiesAndTermsSlice'
 import { selectCookieBanner, openCookieBanner, closeCookieBanner } from '@/store/popupSlice'
 
 import css from './styles.module.css'
@@ -50,7 +56,13 @@ export const CookieAndTermBanner = ({
   })
 
   const handleAccept = () => {
-    dispatch(saveCookieAndTermConsent(getValues()))
+    const values = getValues()
+    dispatch(
+      saveCookieAndTermConsent({
+        ...values,
+        termsVersion: metadata.version,
+      }),
+    )
     dispatch(closeCookieBanner())
   }
 
@@ -133,11 +145,10 @@ export const CookieAndTermBanner = ({
 
 const CookieBannerPopup = (): ReactElement | null => {
   const cookiePopup = useAppSelector(selectCookieBanner)
-  const cookies = useAppSelector(selectCookies)
   const dispatch = useAppDispatch()
 
-  // Open the banner if cookie preferences haven't been set
-  const shouldOpen = cookies[CookieAndTermType.NECESSARY] === undefined
+  const hasAccepted = useAppSelector(hasAcceptedTerms)
+  const shouldOpen = !hasAccepted
 
   useEffect(() => {
     if (shouldOpen) {
@@ -153,5 +164,4 @@ const CookieBannerPopup = (): ReactElement | null => {
     </div>
   ) : null
 }
-
 export default CookieBannerPopup

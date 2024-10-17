@@ -1,43 +1,80 @@
 import type { ReactElement } from 'react'
-import { TokenType, type TransactionDetails } from '@safe-global/safe-gateway-typescript-sdk'
+import { Stack } from '@mui/material'
+import { type AddressEx, TokenType, type TransactionDetails, Operation } from '@safe-global/safe-gateway-typescript-sdk'
 
 import { HexEncodedData } from '@/components/transactions/HexEncodedData'
 import { MethodDetails } from '@/components/transactions/TxDetails/TxData/DecodedData/MethodDetails'
 import { useCurrentChain } from '@/hooks/useChains'
-import { formatVisualAmount } from '@/utils/formatters'
 import SendAmountBlock from '@/components/tx-flow/flows/TokenTransfer/SendAmountBlock'
 import { ZERO_ADDRESS } from '@safe-global/protocol-kit/dist/src/utils/constants'
 import SendToBlock from '@/components/tx/SendToBlock'
-import { Stack } from '@mui/material'
-import { isCustomTxInfo } from '@/utils/transaction-guards'
+import MethodCall from './MethodCall'
+import useSafeAddress from '@/hooks/useSafeAddress'
+import { sameAddress } from '@/utils/addresses'
+import { DelegateCallWarning } from '@/components/transactions/Warning'
+import { isMigrateToL2TxData } from '@/utils/transaction-guards'
 
 interface Props {
   txData: TransactionDetails['txData']
-  txInfo: TransactionDetails['txInfo']
+  toInfo?: AddressEx
 }
 
-export const DecodedData = ({ txData, txInfo }: Props): ReactElement | null => {
+export const DecodedData = ({ txData, toInfo }: Props): ReactElement | null => {
+  const safeAddress = useSafeAddress()
   const chainInfo = useCurrentChain()
+
   // nothing to render
-  if (!txData) {
-    return null
+  if (!txData && !toInfo) return null
+
+  if (!txData && toInfo) {
+    return (
+      <SendToBlock
+        title="Interact with"
+        address={toInfo.value}
+        name={toInfo.name}
+        customAvatar={toInfo.logoUri}
+        avatarSize={26}
+      />
+    )
   }
 
+  if (!txData) return null
+
+  const amountInWei = txData.value ?? '0'
+  const isDelegateCall = txData.operation === Operation.DELEGATE
+  const toAddress = toInfo?.value || txData.to.value
+  const method = txData.dataDecoded?.method || ''
+  const addressInfo = txData.addressInfoIndex?.[toAddress]
+  const name = sameAddress(toAddress, safeAddress)
+    ? 'this Safe Account'
+    : addressInfo?.name || toInfo?.name || txData.to.name
+  const avatar = addressInfo?.logoUri || toInfo?.logoUri || txData.to.logoUri
+  const isFallback = !method && !txData?.dataDecoded?.parameters
+
   let decodedData = <></>
-  if (txData.dataDecoded) {
+  if (txData.dataDecoded && !isFallback) {
     decodedData = <MethodDetails data={txData.dataDecoded} addressInfoIndex={txData.addressInfoIndex} />
   } else if (txData.hexData) {
     // When no decoded data, display raw hex data
-    decodedData = <HexEncodedData title="Data (hex encoded)" hexData={txData.hexData} />
+    decodedData = <HexEncodedData title="Data (hex-encoded)" hexData={txData.hexData} />
   }
 
-  const amount = txData.value ? formatVisualAmount(txData.value, chainInfo?.nativeCurrency.decimals) : '0'
-  // we render the decoded data
+  const isL2Migration = isMigrateToL2TxData(txData, chainInfo?.chainId)
+
   return (
-    <Stack spacing={1}>
-      {amount !== '0' && (
+    <Stack spacing={2}>
+      {isDelegateCall && <DelegateCallWarning showWarning={!txData.trustedDelegateCallTarget && !isL2Migration} />}
+
+      {method ? (
+        <MethodCall contractAddress={toAddress} contractName={name} contractLogo={avatar} method={method} />
+      ) : (
+        <SendToBlock address={toAddress} name={name} title="Interacted with:" avatarSize={26} customAvatar={avatar} />
+      )}
+
+      {amountInWei !== '0' && (
         <SendAmountBlock
-          amount={amount}
+          title="Value:"
+          amountInWei={amountInWei}
           tokenInfo={{
             type: TokenType.NATIVE_TOKEN,
             address: ZERO_ADDRESS,
@@ -47,12 +84,6 @@ export const DecodedData = ({ txData, txInfo }: Props): ReactElement | null => {
           }}
         />
       )}
-      <SendToBlock
-        address={txData.to.value}
-        title="Interact with"
-        name={isCustomTxInfo(txInfo) ? txInfo.to.name : undefined}
-        avatarSize={26}
-      />
 
       {decodedData}
     </Stack>
