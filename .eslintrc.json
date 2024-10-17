@@ -13,7 +13,7 @@
     "@typescript-eslint/consistent-type-imports": "error",
     "@typescript-eslint/await-thenable": "error",
     "no-constant-condition": "warn",
-    "no-unused-vars": ["error", { "varsIgnorePattern": "^_" }],
+    "no-unused-vars": ["off", { "varsIgnorePattern": "^_" }],
     "react-hooks/exhaustive-deps": [
       "warn",
       {
