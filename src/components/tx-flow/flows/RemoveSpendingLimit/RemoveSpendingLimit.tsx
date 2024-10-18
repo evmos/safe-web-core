@@ -10,7 +10,6 @@ import { relativeTime } from '@/utils/date'
 import { trackEvent, SETTINGS_EVENTS } from '@/services/analytics'
 import useBalances from '@/hooks/useBalances'
 import SendAmountBlock from '@/components/tx-flow/flows/TokenTransfer/SendAmountBlock'
-import { safeFormatUnits } from '@/utils/formatters'
 import SpendingLimitLabel from '@/components/common/SpendingLimitLabel'
 import { createTx } from '@/services/tx/tx-sender'
 
@@ -23,6 +22,8 @@ export const RemoveSpendingLimit = ({ params }: { params: SpendingLimitState }) 
   const chainId = useChainId()
   const { balances } = useBalances()
   const token = balances.items.find((item) => item.tokenInfo.address === params.token.address)
+
+  const amountInWei = params.amount
 
   useEffect(() => {
     const spendingLimitAddress = getSpendingLimitModuleAddress(chainId)
@@ -48,13 +49,7 @@ export const RemoveSpendingLimit = ({ params }: { params: SpendingLimitState }) 
 
   return (
     <SignOrExecuteForm onSubmit={onFormSubmit}>
-      {token && (
-        <SendAmountBlock
-          amount={safeFormatUnits(params.amount, token.tokenInfo.decimals)}
-          tokenInfo={token.tokenInfo}
-          title="Amount"
-        />
-      )}
+      {token && <SendAmountBlock amountInWei={amountInWei} tokenInfo={token.tokenInfo} title="Amount" />}
 
       <Grid container gap={1} alignItems="center">
         <Grid item md>

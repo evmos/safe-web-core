@@ -1,5 +1,5 @@
 import type { SafeVersion } from '@safe-global/safe-core-sdk-types'
-import { type BrowserProvider, type Provider } from 'ethers'
+import { type Eip1193Provider, type Provider } from 'ethers'
 
 import { getSafeInfo, type SafeInfo, type ChainInfo, relayTransaction } from '@safe-global/safe-gateway-typescript-sdk'
 import {
@@ -10,14 +10,15 @@ import {
 import type { UrlObject } from 'url'
 import { AppRoutes } from '@/config/routes'
 import { SAFE_APPS_EVENTS, trackEvent } from '@/services/analytics'
-import { predictSafeAddress, SafeFactory } from '@safe-global/protocol-kit'
+import { predictSafeAddress, SafeFactory, SafeProvider } from '@safe-global/protocol-kit'
 import type Safe from '@safe-global/protocol-kit'
 import type { DeploySafeProps } from '@safe-global/protocol-kit'
-import { createEthersAdapter, isValidSafeVersion } from '@/hooks/coreSDK/safeCoreSDK'
+import { isValidSafeVersion } from '@/hooks/coreSDK/safeCoreSDK'
 
 import { backOff } from 'exponential-backoff'
-import { LATEST_SAFE_VERSION } from '@/config/constants'
 import { EMPTY_DATA, ZERO_ADDRESS } from '@safe-global/protocol-kit/dist/src/utils/constants'
+import { getLatestSafeVersion } from '@/utils/chains'
+import { ECOSYSTEM_ID_ADDRESS } from '@/config/constants'
 
 export type SafeCreationProps = {
   owners: string[]
@@ -25,27 +26,22 @@ export type SafeCreationProps = {
   saltNonce: number
 }
 
-const getSafeFactory = async (
-  ethersProvider: BrowserProvider,
-  safeVersion = LATEST_SAFE_VERSION,
-): Promise<SafeFactory> => {
+const getSafeFactory = async (provider: Eip1193Provider, safeVersion: SafeVersion): Promise<SafeFactory> => {
   if (!isValidSafeVersion(safeVersion)) {
     throw new Error('Invalid Safe version')
   }
-  const ethAdapter = await createEthersAdapter(ethersProvider)
-  const safeFactory = await SafeFactory.create({ ethAdapter, safeVersion })
-  return safeFactory
+  return SafeFactory.init({ provider, safeVersion })
 }
 
 /**
  * Create a Safe creation transaction via Core SDK and submits it to the wallet
  */
 export const createNewSafe = async (
-  ethersProvider: BrowserProvider,
+  provider: Eip1193Provider,
   props: DeploySafeProps,
-  safeVersion?: SafeVersion,
+  safeVersion: SafeVersion,
 ): Promise<Safe> => {
-  const safeFactory = await getSafeFactory(ethersProvider, safeVersion)
+  const safeFactory = await getSafeFactory(provider, safeVersion)
   return safeFactory.deploySafe(props)
 }
 
@@ -53,19 +49,20 @@ export const createNewSafe = async (
  * Compute the new counterfactual Safe address before it is actually created
  */
 export const computeNewSafeAddress = async (
-  ethersProvider: BrowserProvider,
+  provider: Eip1193Provider,
   props: DeploySafeProps,
-  chainId: string,
+  chain: ChainInfo,
+  safeVersion?: SafeVersion,
 ): Promise<string> => {
-  const ethAdapter = await createEthersAdapter(ethersProvider)
+  const safeProvider = new SafeProvider({ provider })
 
   return predictSafeAddress({
-    ethAdapter,
-    chainId: BigInt(chainId),
+    safeProvider,
+    chainId: BigInt(chain.chainId),
     safeAccountConfig: props.safeAccountConfig,
     safeDeploymentConfig: {
       saltNonce: props.saltNonce,
-      safeVersion: LATEST_SAFE_VERSION as SafeVersion,
+      safeVersion: safeVersion ?? getLatestSafeVersion(chain),
     },
   })
 }
@@ -79,26 +76,40 @@ export const encodeSafeCreationTx = async ({
   threshold,
   saltNonce,
   chain,
-}: SafeCreationProps & { chain: ChainInfo }) => {
-  const readOnlySafeContract = await getReadOnlyGnosisSafeContract(chain, LATEST_SAFE_VERSION)
-  const readOnlyProxyContract = await getReadOnlyProxyFactoryContract(chain.chainId, LATEST_SAFE_VERSION)
-  const readOnlyFallbackHandlerContract = await getReadOnlyFallbackHandlerContract(chain.chainId, LATEST_SAFE_VERSION)
+  safeVersion,
+}: SafeCreationProps & { chain: ChainInfo; safeVersion?: SafeVersion }) => {
+  const usedSafeVersion = safeVersion ?? getLatestSafeVersion(chain)
+  const readOnlySafeContract = await getReadOnlyGnosisSafeContract(chain, usedSafeVersion)
+  const readOnlyProxyContract = await getReadOnlyProxyFactoryContract(usedSafeVersion)
+  const readOnlyFallbackHandlerContract = await getReadOnlyFallbackHandlerContract(usedSafeVersion)
 
-  const setupData = readOnlySafeContract.encode('setup', [
+  const callData = {
     owners,
     threshold,
-    ZERO_ADDRESS,
-    EMPTY_DATA,
-    await readOnlyFallbackHandlerContract.getAddress(),
-    ZERO_ADDRESS,
-    '0',
-    ZERO_ADDRESS,
+    to: ZERO_ADDRESS,
+    data: EMPTY_DATA,
+    fallbackHandler: await readOnlyFallbackHandlerContract.getAddress(),
+    paymentToken: ZERO_ADDRESS,
+    payment: 0,
+    paymentReceiver: ECOSYSTEM_ID_ADDRESS,
+  }
+
+  // @ts-ignore union type is too complex
+  const setupData = readOnlySafeContract.encode('setup', [
+    callData.owners,
+    callData.threshold,
+    callData.to,
+    callData.data,
+    callData.fallbackHandler,
+    callData.paymentToken,
+    callData.payment,
+    callData.paymentReceiver,
   ])
 
   return readOnlyProxyContract.encode('createProxyWithNonce', [
     await readOnlySafeContract.getAddress(),
     setupData,
-    saltNonce,
+    BigInt(saltNonce),
   ])
 }
 
@@ -107,8 +118,9 @@ export const estimateSafeCreationGas = async (
   provider: Provider,
   from: string,
   safeParams: SafeCreationProps,
+  safeVersion?: SafeVersion,
 ): Promise<bigint> => {
-  const readOnlyProxyFactoryContract = await getReadOnlyProxyFactoryContract(chain.chainId, LATEST_SAFE_VERSION)
+  const readOnlyProxyFactoryContract = await getReadOnlyProxyFactoryContract(safeVersion ?? getLatestSafeVersion(chain))
   const encodedSafeCreationTx = await encodeSafeCreationTx({ ...safeParams, chain })
 
   const gas = await provider.estimateGas({
@@ -145,17 +157,14 @@ export const getRedirect = (
   if (!chainPrefix) return AppRoutes.index
 
   // Go to the dashboard if no specific redirect is provided
-  if (!redirectUrl) {
+  if (!redirectUrl || !redirectUrl.startsWith(AppRoutes.apps.index)) {
     return { pathname: AppRoutes.home, query: { safe: address } }
   }
 
   // Otherwise, redirect to the provided URL (e.g. from a Safe App)
 
   // Track the redirect to Safe App
-  // TODO: Narrow this down to /apps only
-  if (redirectUrl.includes('apps')) {
-    trackEvent(SAFE_APPS_EVENTS.SHARED_APP_OPEN_AFTER_SAFE_CREATION)
-  }
+  trackEvent(SAFE_APPS_EVENTS.SHARED_APP_OPEN_AFTER_SAFE_CREATION)
 
   // We're prepending the safe address directly here because the `router.push` doesn't parse
   // The URL for already existing query params
@@ -172,13 +181,15 @@ export const relaySafeCreation = async (
   saltNonce: number,
   version?: SafeVersion,
 ) => {
-  const safeVersion = version ?? LATEST_SAFE_VERSION
+  const latestSafeVersion = getLatestSafeVersion(chain)
 
-  const readOnlyProxyFactoryContract = await getReadOnlyProxyFactoryContract(chain.chainId, safeVersion)
+  const safeVersion = version ?? latestSafeVersion
+
+  const readOnlyProxyFactoryContract = await getReadOnlyProxyFactoryContract(safeVersion)
   const proxyFactoryAddress = await readOnlyProxyFactoryContract.getAddress()
-  const readOnlyFallbackHandlerContract = await getReadOnlyFallbackHandlerContract(chain.chainId, safeVersion)
+  const readOnlyFallbackHandlerContract = await getReadOnlyFallbackHandlerContract(safeVersion)
   const fallbackHandlerAddress = await readOnlyFallbackHandlerContract.getAddress()
-  const readOnlySafeContract = await getReadOnlyGnosisSafeContract(chain)
+  const readOnlySafeContract = await getReadOnlyGnosisSafeContract(chain, safeVersion)
   const safeContractAddress = await readOnlySafeContract.getAddress()
 
   const callData = {
@@ -189,9 +200,10 @@ export const relaySafeCreation = async (
     fallbackHandler: fallbackHandlerAddress,
     paymentToken: ZERO_ADDRESS,
     payment: 0,
-    paymentReceiver: ZERO_ADDRESS,
+    paymentReceiver: ECOSYSTEM_ID_ADDRESS,
   }
 
+  // @ts-ignore
   const initializer = readOnlySafeContract.encode('setup', [
     callData.owners,
     callData.threshold,
@@ -206,7 +218,7 @@ export const relaySafeCreation = async (
   const createProxyWithNonceCallData = readOnlyProxyFactoryContract.encode('createProxyWithNonce', [
     safeContractAddress,
     initializer,
-    saltNonce,
+    BigInt(saltNonce),
   ])
 
   const relayResponse = await relayTransaction(chain.chainId, {

@@ -3,8 +3,10 @@ import {
   combineReducers,
   createListenerMiddleware,
   type ThunkAction,
-  type PreloadedState,
-  type AnyAction,
+  type Action,
+  type Middleware,
+  type EnhancedStore,
+  type ThunkDispatch,
 } from '@reduxjs/toolkit'
 import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux'
 import merge from 'lodash/merge'
@@ -12,6 +14,8 @@ import { IS_PRODUCTION } from '@/config/constants'
 import { getPreloadedState, persistState } from './persistStore'
 import { broadcastState, listenToBroadcast } from './broadcast'
 import {
+  cookiesAndTermsSlice,
+  cookiesAndTermsInitialState,
   safeMessagesListener,
   swapOrderListener,
   swapOrderStatusListener,
@@ -20,6 +24,9 @@ import {
 } from './slices'
 import * as slices from './slices'
 import * as hydrate from './useHydrateStore'
+import { ofacApi } from '@/store/ofac'
+import { safePassApi } from './safePass'
+import { metadata } from '@/markdown/terms/terms.md'
 
 const rootReducer = combineReducers({
   [slices.chainsSlice.name]: slices.chainsSlice.reducer,
@@ -43,9 +50,12 @@ const rootReducer = combineReducers({
   [slices.batchSlice.name]: slices.batchSlice.reducer,
   [slices.undeployedSafesSlice.name]: slices.undeployedSafesSlice.reducer,
   [slices.swapParamsSlice.name]: slices.swapParamsSlice.reducer,
+  [ofacApi.reducerPath]: ofacApi.reducer,
+  [safePassApi.reducerPath]: safePassApi.reducer,
+  [slices.gatewayApi.reducerPath]: slices.gatewayApi.reducer,
 })
 
-const persistedSlices: (keyof PreloadedState<RootState>)[] = [
+const persistedSlices: (keyof Partial<RootState>)[] = [
   slices.sessionSlice.name,
   slices.addressBookSlice.name,
   slices.pendingTxsSlice.name,
@@ -66,10 +76,13 @@ export const getPersistedState = () => {
 
 export const listenerMiddlewareInstance = createListenerMiddleware<RootState>()
 
-const middleware = [
+const middleware: Middleware<{}, RootState>[] = [
   persistState(persistedSlices),
   broadcastState(persistedSlices),
   listenerMiddlewareInstance.middleware,
+  ofacApi.middleware,
+  safePassApi.middleware,
+  slices.gatewayApi.middleware,
 ]
 const listeners = [safeMessagesListener, txHistoryListener, txQueueListener, swapOrderListener, swapOrderStatusListener]
 
@@ -83,13 +96,25 @@ export const _hydrationReducer: typeof rootReducer = (state, action) => {
      *
      * @see https://lodash.com/docs/4.17.15#merge
      */
+    const nextState = merge({}, state, action.payload) as RootState
 
-    return merge({}, state, action.payload)
+    // Check if termsVersion matches
+    if (
+      nextState[cookiesAndTermsSlice.name] &&
+      nextState[cookiesAndTermsSlice.name].termsVersion !== metadata.version
+    ) {
+      // Reset consent
+      nextState[cookiesAndTermsSlice.name] = {
+        ...cookiesAndTermsInitialState,
+      }
+    }
+
+    return nextState
   }
-  return rootReducer(state, action)
+  return rootReducer(state, action) as RootState
 }
 
-export const makeStore = (initialState?: Record<string, any>) => {
+export const makeStore = (initialState?: Partial<RootState>): EnhancedStore<RootState, Action> => {
   const store = configureStore({
     reducer: _hydrationReducer,
     middleware: (getDefaultMiddleware) => {
@@ -105,10 +130,9 @@ export const makeStore = (initialState?: Record<string, any>) => {
   return store
 }
 
-export type AppDispatch = ReturnType<typeof makeStore>['dispatch']
-export type RootState = ReturnType<typeof _hydrationReducer>
-
-export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unknown, AnyAction>
+export type RootState = ReturnType<typeof rootReducer>
+export type AppDispatch = ThunkDispatch<RootState, unknown, Action> & EnhancedStore<RootState, Action>['dispatch']
+export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unknown, Action>
 
 export const useAppDispatch = () => useDispatch<AppDispatch>()
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector

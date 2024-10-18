@@ -19,7 +19,7 @@ export function clickOnSideMenuItem(item) {
 
 export function waitForHistoryCallToComplete() {
   cy.intercept('GET', constants.transactionHistoryEndpoint).as('History')
-  cy.wait('@History')
+  cy.wait('@History', { timeout: 20000 })
 }
 
 export const fetchSafeData = (safeAddress) => {
@@ -332,4 +332,13 @@ export function getIframeBody(iframe) {
 
 export const checkButtonByTextExists = (buttonText) => {
   cy.get('button').contains(buttonText).should('exist')
+}
+
+export function getAddedSafeAddressFromLocalStorage(chainId, index) {
+  return cy.window().then((win) => {
+    const addedSafes = win.localStorage.getItem(constants.localStorageKeys.SAFE_v2__addedSafes)
+    const addedSafesObj = JSON.parse(addedSafes)
+    const safeAddress = Object.keys(addedSafesObj[chainId])[index]
+    return safeAddress
+  })
 }

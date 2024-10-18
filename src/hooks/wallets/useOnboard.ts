@@ -21,6 +21,7 @@ export type ConnectedWallet = {
   provider: Eip1193Provider
   icon?: string
   balance?: string
+  isDelegate?: boolean
 }
 
 const { getStore, setStore, useStore } = new ExternalStore<OnboardAPI>()
@@ -70,6 +71,7 @@ export const getConnectedWallet = (wallets: WalletState[]): ConnectedWallet | nu
       provider: primaryWallet.provider,
       icon: primaryWallet.icon,
       balance,
+      isDelegate: false,
     }
   } catch (e) {
     logError(Errors._106, e)
@@ -176,13 +178,6 @@ export const useInitOnboard = () => {
     }
 
     enableWallets().then(() => {
-      // e2e wallet
-      if (typeof window !== 'undefined' && window.Cypress) {
-        connectWallet(onboard, {
-          autoSelect: { label: 'e2e wallet', disableModals: true },
-        })
-      }
-
       // Reconnect last wallet
       connectLastWallet(onboard)
     })

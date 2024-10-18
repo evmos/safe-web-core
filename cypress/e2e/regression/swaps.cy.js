@@ -7,10 +7,14 @@ import { getSafes, CATEGORIES } from '../../support/safes/safesHandler.js'
 import * as owner from '../pages/owners.pages'
 import * as wallet from '../../support/utils/wallet.js'
 import * as swaps_data from '../../fixtures/swaps_data.json'
+import * as navigation from '../pages/navigation.page'
+import { getEvents, events, checkDataLayerEvents } from '../../support/utils/gtag.js'
 
 const walletCredentials = JSON.parse(Cypress.env('CYPRESS_WALLET_CREDENTIALS'))
 const signer = walletCredentials.OWNER_4_PRIVATE_KEY
 const signer2 = walletCredentials.OWNER_3_WALLET_ADDRESS
+const signer3 = walletCredentials.OWNER_1_PRIVATE_KEY
+
 let staticSafes = []
 
 let iframeSelector
@@ -23,11 +27,9 @@ describe('Swaps tests', () => {
   })
 
   beforeEach(() => {
-    cy.clearLocalStorage()
     cy.visit(constants.swapUrl + staticSafes.SEP_STATIC_SAFE_1)
     main.waitForHistoryCallToComplete()
     wallet.connectSigner(signer)
-    main.acceptCookies()
     iframeSelector = `iframe[src*="${constants.swapWidget}"]`
   })
 
@@ -42,10 +44,10 @@ describe('Swaps tests', () => {
       swaps.clickOnSettingsBtn()
       swaps.selectInputCurrency(swaps.swapTokens.cow)
       swaps.checkTokenBalance(staticSafes.SEP_STATIC_SAFE_1.substring(4), swaps.swapTokens.cow)
-      swaps.setInputValue(4)
+      swaps.setInputValue(20)
       swaps.selectOutputCurrency(swaps.swapTokens.dai)
       swaps.checkSwapBtnIsVisible()
-      swaps.isInputGreaterZero(swaps.outputurrencyInput).then((isGreaterThanZero) => {
+      swaps.isInputGreaterZero(swaps.outputCurrencyInput).then((isGreaterThanZero) => {
         cy.wrap(isGreaterThanZero).should('be.true')
       })
       swaps.clickOnExceeFeeChkbox()
@@ -88,6 +90,7 @@ describe('Swaps tests', () => {
           }
         })
         .within(() => {
+          swaps.selectInputCurrency(swaps.swapTokens.cow)
           swaps.clickOnSettingsBtn()
           swaps.enableCustomRecipient(isCustomRecipientFound(swaps.customRecipient))
           swaps.clickOnSettingsBtn()
@@ -108,6 +111,7 @@ describe('Swaps tests', () => {
 
     main.getIframeBody(iframeSelector).then(($frame) => {
       cy.wrap($frame).within(() => {
+        swaps.selectInputCurrency(swaps.swapTokens.cow)
         swaps.clickOnSettingsBtn()
 
         if (isCustomRecipientFound($frame, swaps.customRecipient)) {
@@ -134,13 +138,15 @@ describe('Swaps tests', () => {
     swaps.acceptLegalDisclaimer()
     cy.wait(4000)
     main.getIframeBody(iframeSelector).within(() => {
+      swaps.selectInputCurrency(swaps.swapTokens.cow)
       swaps.clickOnSettingsBtn()
       swaps.setSlippage('0.30')
       swaps.setExpiry('2')
       swaps.clickOnSettingsBtn()
-      swaps.setInputValue(4)
+      swaps.setInputValue(200)
+      swaps.selectOutputCurrency(swaps.swapTokens.dai)
       swaps.checkSwapBtnIsVisible()
-      swaps.isInputGreaterZero(swaps.outputurrencyInput).then((isGreaterThanZero) => {
+      swaps.isInputGreaterZero(swaps.outputCurrencyInput).then((isGreaterThanZero) => {
         cy.wrap(isGreaterThanZero).should('be.true')
       })
       swaps.clickOnExceeFeeChkbox()
@@ -159,17 +165,93 @@ describe('Swaps tests', () => {
       const widgetFee = swaps.getWidgetFee()
       const orderID = swaps.getOrderID()
 
+      const isCustomRecipientFound = ($frame, customRecipient) => {
+        const element = $frame.find(customRecipient)
+        return element.length > 0
+      }
+
+      swaps.acceptLegalDisclaimer()
+      cy.wait(4000)
+      main.getIframeBody(iframeSelector).then(($frame) => {
+        cy.wrap($frame).within(() => {
+          swaps.selectInputCurrency(swaps.swapTokens.cow)
+          swaps.setInputValue(200)
+          swaps.selectOutputCurrency(swaps.swapTokens.dai)
+          swaps.checkSwapBtnIsVisible()
+          swaps.clickOnSettingsBtn()
+
+          if (isCustomRecipientFound($frame, swaps.customRecipient)) {
+            swaps.disableCustomRecipient(true)
+            cy.wait(1000)
+            swaps.enableCustomRecipient(!isCustomRecipientFound($frame, swaps.customRecipient))
+          } else {
+            swaps.enableCustomRecipient(isCustomRecipientFound($frame, swaps.customRecipient))
+            cy.wait(1000)
+          }
+
+          swaps.clickOnSettingsBtn()
+          swaps.enterRecipient(signer2)
+          swaps.clickOnExceeFeeChkbox()
+          swaps.clickOnSwapBtn()
+          swaps.clickOnSwapBtn()
+        })
+        swaps.verifyRecipientAlertIsDisplayed()
+      })
+    },
+  )
+
+  it(
+    'Verify an order can be created, signed by second signer and deleted. GA tx_confirm, tx_created',
+    { defaultCommandTimeout: 30000 },
+    () => {
+      const tx_created = [
+        {
+          eventLabel: events.txCreatedSwap.eventLabel,
+          eventCategory: events.txCreatedSwap.category,
+          eventType: events.txCreatedSwap.eventType,
+          safeAddress: staticSafes.SEP_STATIC_SAFE_1.slice(6),
+        },
+      ]
+      const tx_confirmed = [
+        {
+          eventLabel: events.txConfirmedSwap.eventLabel,
+          eventCategory: events.txConfirmedSwap.category,
+          eventType: events.txConfirmedSwap.eventType,
+          safeAddress: staticSafes.SEP_STATIC_SAFE_1.slice(6),
+        },
+      ]
       swaps.acceptLegalDisclaimer()
       cy.wait(4000)
       main.getIframeBody(iframeSelector).within(() => {
-        swaps.setInputValue(4)
-        swaps.checkSwapBtnIsVisible()
-        swaps.enterRecipient(signer2)
+        swaps.clickOnSettingsBtn()
+        swaps.setSlippage('0.30')
+        swaps.setExpiry('2')
+        swaps.clickOnSettingsBtn()
+        swaps.selectInputCurrency(swaps.swapTokens.cow)
+        swaps.checkTokenBalance(staticSafes.SEP_STATIC_SAFE_1.substring(4), swaps.swapTokens.cow)
+        swaps.setInputValue(100)
+        swaps.selectOutputCurrency(swaps.swapTokens.dai)
         swaps.clickOnExceeFeeChkbox()
         swaps.clickOnSwapBtn()
         swaps.clickOnSwapBtn()
       })
-      swaps.verifyRecipientAlertIsDisplayed()
+      create_tx.changeNonce(22)
+      create_tx.clickOnSignTransactionBtn()
+      create_tx.clickViewTransaction()
+      navigation.clickOnWalletExpandMoreIcon()
+      navigation.clickOnDisconnectBtn()
+      wallet.connectSigner(signer3)
+      create_tx.clickOnConfirmTransactionBtn()
+      create_tx.clickOnNoLaterOption()
+      create_tx.clickOnSignTransactionBtn()
+      navigation.clickOnWalletExpandMoreIcon()
+      navigation.clickOnDisconnectBtn()
+      wallet.connectSigner(signer)
+      create_tx.deleteTx()
+
+      getEvents()
+      checkDataLayerEvents(tx_created)
+      checkDataLayerEvents(tx_confirmed)
     },
   )
 })

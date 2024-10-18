@@ -9,17 +9,19 @@ import * as protocolKitContracts from '@safe-global/protocol-kit/dist/src/contra
 import type Safe from '@safe-global/protocol-kit'
 
 import { renderHook } from '@/tests/test-utils'
+import type {
+  CompatibilityFallbackHandlerContractImplementationType,
+  SimulateTxAccessorContractImplementationType,
+} from '@safe-global/protocol-kit/dist/src/types'
 import { waitFor } from '@testing-library/react'
 import type { OnboardAPI } from '@web3-onboard/core'
 import { faker } from '@faker-js/faker'
-import type { CompatibilityFallbackHandlerContract, SimulateTxAccessorContract } from '@safe-global/safe-core-sdk-types'
 
 describe('useDeployGasLimit hook', () => {
   beforeEach(() => {
     jest.resetAllMocks()
 
     jest.spyOn(useWallet, 'default').mockReturnValue({} as ConnectedWallet)
-    jest.spyOn(sdk, 'assertWalletChain').mockImplementation(jest.fn())
   })
 
   it('returns undefined in onboard is not initialized', () => {
@@ -75,15 +77,18 @@ describe('useDeployGasLimit hook', () => {
     const mockOnboard = {} as OnboardAPI
     jest.spyOn(onboard, 'default').mockReturnValue(mockOnboard)
     jest.spyOn(sdk, 'getSafeSDKWithSigner').mockResolvedValue({
+      getThreshold: jest.fn(),
+      getNonce: jest.fn(),
+      getSafeProvider: () => ({
+        estimateGas: () => Promise.resolve('420000'),
+        getSignerAddress: () => Promise.resolve(faker.finance.ethereumAddress()),
+      }),
+      getChainId: jest.fn(),
       getContractManager: () =>
         ({
           contractNetworks: {},
         } as any),
       getContractVersion: () => Promise.resolve('1.3.0'),
-      getEthAdapter: () => ({
-        estimateGas: () => Promise.resolve('420000'),
-        getSignerAddress: () => Promise.resolve(faker.finance.ethereumAddress()),
-      }),
       createSafeDeploymentTransaction: () =>
         Promise.resolve({
           to: faker.finance.ethereumAddress(),
@@ -100,11 +105,11 @@ describe('useDeployGasLimit hook', () => {
     } as unknown as Safe)
     jest.spyOn(protocolKitContracts, 'getCompatibilityFallbackHandlerContract').mockResolvedValue({
       encode: () => '0x3456',
-    } as unknown as CompatibilityFallbackHandlerContract)
+    } as unknown as CompatibilityFallbackHandlerContractImplementationType)
     jest.spyOn(protocolKitContracts, 'getSimulateTxAccessorContract').mockResolvedValue({
       encode: () => '0x4567',
       getAddress: () => Promise.resolve(faker.finance.ethereumAddress()),
-    } as unknown as SimulateTxAccessorContract)
+    } as unknown as SimulateTxAccessorContractImplementationType)
     jest.spyOn(protocolKit, 'estimateSafeDeploymentGas').mockReturnValue(Promise.resolve('100'))
     jest.spyOn(protocolKit, 'estimateTxBaseGas').mockReturnValue(Promise.resolve('21000'))
 
