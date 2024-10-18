@@ -62,10 +62,10 @@ const Footer = (): ReactElement | null => {
                 Evmos Documentation
               </ExternalLink>
             </li>
-            {/* <li>
+            <li>
               <FooterLink href={getHref(AppRoutes.terms)}>Terms</FooterLink>
             </li>
-            <li>
+            {/* <li>
               <FooterLink href={getHref(AppRoutes.privacy)}>Privacy</FooterLink>
             </li>
             <li>
@@ -73,10 +73,10 @@ const Footer = (): ReactElement | null => {
             </li>
             <li>
               <FooterLink href={getHref(AppRoutes.imprint)}>Imprint</FooterLink>
-            </li>
+            </li> */}
             <li>
               <FooterLink href={getHref(AppRoutes.cookie)}>Cookie policy</FooterLink>
-            </li> */}
+            </li>
             <li>
               <FooterLink href={getHref(AppRoutes.settings.index)}>Preferences</FooterLink>
             </li>
