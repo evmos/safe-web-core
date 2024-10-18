@@ -16,6 +16,8 @@ import {
 import { selectCookieBanner, openCookieBanner, closeCookieBanner } from '@/store/popupSlice'
 
 import css from './styles.module.css'
+import ExternalLink from '../ExternalLink'
+import { AppRoutes } from '@/config/routes'
 
 const COOKIE_AND_TERM_WARNING: Record<CookieAndTermType, string> = {
   [CookieAndTermType.TERMS]: '',
