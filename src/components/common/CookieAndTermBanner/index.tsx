@@ -90,7 +90,7 @@ export const CookieAndTermBanner = ({
               <Link href={AppRoutes.terms} style={{ textDecoration: 'underline' }}>
                 Terms & Conditions
               </Link>{' '}
-              (last updated October 2024) and the use of necessary cookies.{' '}
+              and the use of necessary cookies.{' '}
               <Link href={AppRoutes.cookie} style={{ textDecoration: 'underline' }}>
                 Cookie policy
               </Link>
