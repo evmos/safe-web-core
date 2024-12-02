@@ -1,0 +1,84 @@
+diff --git a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_migration.json b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_migration.json
+index fca843f..9b24039 100644
+--- a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_migration.json
++++ b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_migration.json
+@@ -27,7 +27,8 @@
+         "84532": "canonical",
+         "534352": "canonical",
+         "11155111": "canonical",
+-        "1313161554": "canonical"
++        "1313161554": "canonical",
++        "9001": "canonical"
+     },
+     "abi": [
+         {
+diff --git a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_to_l2_migration.json b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_to_l2_migration.json
+index 59ff972..3d51422 100644
+--- a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_to_l2_migration.json
++++ b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_to_l2_migration.json
+@@ -27,7 +27,8 @@
+         "84532": "canonical",
+         "534352": "canonical",
+         "11155111": "canonical",
+-        "1313161554": "canonical"
++        "1313161554": "canonical",
++        "9001": "canonical"
+     },
+     "abi": [
+         {
+diff --git a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_to_l2_setup.json b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_to_l2_setup.json
+index 89ddef4..660a49f 100644
+--- a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_to_l2_setup.json
++++ b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/dist/assets/v1.4.1/safe_to_l2_setup.json
+@@ -27,7 +27,8 @@
+         "84532": "canonical",
+         "534352": "canonical",
+         "11155111": "canonical",
+-        "1313161554": "canonical"
++        "1313161554": "canonical",
++        "9001": "canonical"
+     },
+     "abi": [
+         {
+diff --git a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_migration.json b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_migration.json
+index 5004c06..9750696 100644
+--- a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_migration.json
++++ b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_migration.json
+@@ -27,7 +27,8 @@
+     "84532": "canonical",
+     "534352": "canonical",
+     "11155111": "canonical",
+-    "1313161554": "canonical"
++    "1313161554": "canonical",
++    "9001": "canonical"
+   },
+   "abi": [
+     {
+diff --git a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_to_l2_migration.json b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_to_l2_migration.json
+index 770546e..6e404e5 100644
+--- a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_to_l2_migration.json
++++ b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_to_l2_migration.json
+@@ -27,7 +27,8 @@
+     "84532": "canonical",
+     "534352": "canonical",
+     "11155111": "canonical",
+-    "1313161554": "canonical"
++    "1313161554": "canonical",
++    "9001": "canonical"
+   },
+   "abi": [
+     {
+diff --git a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_to_l2_setup.json b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_to_l2_setup.json
+index 2b51686..b9738bf 100644
+--- a/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_to_l2_setup.json
++++ b/node_modules/@safe-global/protocol-kit/node_modules/@safe-global/safe-deployments/src/assets/v1.4.1/safe_to_l2_setup.json
+@@ -27,7 +27,8 @@
+     "84532": "canonical",
+     "534352": "canonical",
+     "11155111": "canonical",
+-    "1313161554": "canonical"
++    "1313161554": "canonical",
++    "9001": "canonical"
+   },
+   "abi": [
+     {
