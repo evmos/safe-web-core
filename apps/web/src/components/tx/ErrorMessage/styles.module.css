@@ -1,0 +1,40 @@
+.container {
+  padding: var(--space-2);
+  margin: var(--space-2) 0;
+  border-radius: 4px;
+}
+
+.container.error {
+  background-color: var(--color-error-background);
+  color: var(--color-error-dark);
+}
+
+.container.warning {
+  background-color: var(--color-warning-background);
+}
+
+.container.info {
+  background-color: var(--color-info-background);
+  color: var(--color-primary-main);
+}
+
+.container.info svg {
+  color: var(--color-text-secondary);
+}
+
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.message button {
+  vertical-align: baseline;
+  text-decoration: underline;
+}
+
+.details {
+  margin-top: var(--space-1);
+  color: var(--color-primary-light);
+  word-break: break-word;
+}

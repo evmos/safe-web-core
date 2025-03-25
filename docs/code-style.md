@@ -1,39 +1,69 @@
-# 💝 Code Style Guidelines
+# Code Style Guidelines
 
-## Principles
+## Code Structure
 
-- Rely on automation/IDE
-- Strive for pragmatism
-- Don’t add bells and whistles (newlines, spaces for “beauty”, ordering imports etc.)
-- Avoid unnecessary stylistic changes
-    - They increase the chance of git conflicts (esp. in imports)
-    - They make it harder to review the PR
-    - Ultimately, a waste of time
+### General Components
 
-## Functional code style
+- Components that are used across multiple features should reside in the `src/components/` folder.
+- Each component should have its own folder, structured as follows:
+  ```
+  Alert/
+  - Alert.tsx
+  - Alert.test.tsx
+  - Alert.stories.tsx
+  - index.tsx
+  ```
+- The main component implementation should be in a named file (e.g., `Alert.tsx`), and `index.tsx` should only be used for exporting the component.
+- **Reason**: Using `index.tsx` allows for cleaner imports, e.g.,
+  ```
+  import { Alert } from 'src/components/Alert';
+  ```
+  instead of:
+  ```
+  import { Alert } from 'src/components/Alert/Alert';
+  ```
 
-- Write small functions that do one thing with no side-effects
-- Compose small functions to do more things
-- Same with components: don’t write giant components, write small composable components
-- Prefer `map`/`filter` over `reduce`/`forEach`
-- Watch out when using destructive methods like `pop` or `sort` (yes, `sort` is destructive!)
-- Avoid initializing things on the module level, prefer to export an init function instead
+### Exporting Components
 
-## Reactive programming
+- **Always prefer named exports over default exports.**
+    - Named exports make it easier to refactor and identify exports in a codebase.
 
-- Keep in mind the React component life-cycle, avoid excessive re-renders
-- Glue regular JS functions and events with React using hooks
-- Write small `useEffect` hooks that do just one thing and have only necessary dependencies
+### Features and Screens
 
-## Variable/function naming
+- Feature-specific components and screens should be implemented inside the `src/features/` folder.
 
-Infamously, the hardest problem in computer science.
+#### Example: Feature File Structure
 
-- Components are classes, so their names should be in PascalCase
-- Config-like constants should be in UPPER_CASE, e.g. `INFURA_URL`
-- Regular `const` variables should be in camelCase
-- Avoid prepositions in variable names:
-    - ~`restoreFromLocalStorage`~ 🙅
-    - `restoreStoredValue` 👍
-- Try to name boolean vars with `is`, e.g. `isLoading` vs `loading`
-- If something needs to be exported just for unit tests, export it with a `_` prefix, e.g. `_getOnboardConfig`
+For a feature called **Assets**, the file structure might look like this:
+
+```
+// src/features/Assets
+- Assets.container.tsx
+- index.tsx
+```
+
+- `index.tsx` should only export the **Assets** component/container.
+
+#### Subcomponents for Features
+
+- If a feature depends on multiple subcomponents unique to that feature, place them in a `components` subfolder. For example:
+
+```
+// src/features/Assets/components/AssetHeader
+- AssetHeader.tsx
+- AssetHeader.container.tsx
+- index.tsx
+```
+
+### Presentation vs. Container Components
+
+- **Presentation Components**:
+
+    - Responsible only for rendering the UI.
+    - Receive data and callbacks via props.
+    - Avoid direct manipulation of business logic.
+    - Simple business logic can be included but should generally be extracted into hooks.
+
+- **Container Components**:
+    - Handle business logic (e.g., state management, API calls, etc.).
+    - Pass necessary data and callbacks to the corresponding Presentation component.

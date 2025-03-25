@@ -1,0 +1,91 @@
+.container {
+  height: var(--header-height);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  position: relative;
+  border-radius: 0 !important;
+  background-color: var(--color-background-paper);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.element {
+  height: 100%;
+  border-right: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.element :global(.MuiBadge-standard) {
+  font-size: 12px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+}
+
+[data-theme='dark'] .element :global(.MuiBadge-standard) {
+  background-color: var(--color-primary-main);
+}
+
+.menuButton,
+.logo {
+  flex: 1;
+  border: none;
+  align-items: flex-start;
+}
+
+.logoMobile {
+  display: none;
+}
+
+.logo img,
+.logo svg,
+.logoMobile svg {
+  width: auto;
+  display: block;
+  color: var(--color-logo-main);
+  height: 60px;
+}
+
+.logo {
+  padding: var(--space-2);
+}
+
+.menuButton {
+  display: none;
+}
+
+.networkSelector {
+  border-right: none;
+}
+
+.connectWallet {
+  flex-shrink: 0;
+}
+
+@media (max-width: 899.95px) {
+  .logo {
+    display: none;
+  }
+
+  .logoMobile {
+    display: flex;
+    flex: 1;
+    border: none;
+    align-items: flex-start;
+    margin-left: var(--space-2);
+  }
+
+  .menuButton {
+    display: flex;
+    flex: 0;
+  }
+}
+
+@media (max-width: 599.95px) {
+  .hideMobile {
+    display: none;
+  }
+}

@@ -1,0 +1,122 @@
+@import url(./vars.css);
+@import url(./onboard.css);
+@import url(/fonts/fonts.css);
+/**
+* ^^^^^^^
+* Some IDEs show the fonts file above as not existing, but it is.
+* If you modify the path to it make sure that the file is also loaded on the
+* actual website.
+* Fun fact: if this comment block is above the @import url(/fonts/fonts.css);
+* nextjs's build will incorrectly place the @import in the middle of the file
+* and the fonts won't load. More info on @import:
+* https://developer.mozilla.org/en-US/docs/Web/CSS/@import#description
+*/
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family:
+    DM Sans,
+    sans-serif;
+  background-color: var(--color-background-paper);
+}
+
+main {
+  width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 5px auto Highlight;
+  outline: 5px auto -webkit-focus-ring-color;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --header-height: 52px;
+  --footer-height: 67px;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.illustration-main-fill {
+  fill: var(--color-primary-main);
+}
+
+.illustration-light-fill {
+  fill: var(--color-border-main);
+}
+
+.illustration-background-fill {
+  fill: var(--color-logo-background);
+}
+
+.illustration-background-warning-fill {
+  fill: var(--color-warning-background);
+}
+
+.illustration-background-paper-fill {
+  fill: var(--color-background-paper);
+}
+
+.illustration-secondary-light-fill {
+  fill: var(--color-secondary-light);
+}
+
+.illustration-text-primary-fill {
+  fill: var(--color-text-primary);
+}
+
+/* Note: a fallback `stroke` property must be on the svg to work */
+.illustration-main-stroke {
+  stroke: var(--color-primary-main);
+}
+
+.illustration-light-stroke {
+  stroke: var(--color-border-main);
+}
+
+.illustration-very-light-stroke {
+  stroke: var(--color-border-light);
+}
+
+.illustration-background-stroke {
+  stroke: var(--color-logo-background);
+}
+
+@media (max-width: 599.95px) {
+  .sticky {
+    position: sticky;
+    right: 0;
+    background: var(--color-background-paper);
+  }
+}
+
+body.beamerAnnouncementBarTopActive {
+  padding-top: 0 !important;
+}
+
+#beamerLastPostTitle {
+  left: 120px !important;
+}

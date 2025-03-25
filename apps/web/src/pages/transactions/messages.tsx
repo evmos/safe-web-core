@@ -1,0 +1,44 @@
+import { useEffect } from 'react'
+import Head from 'next/head'
+import { FEATURES } from '@/utils/chains'
+import { useRouter } from 'next/router'
+import type { NextPage } from 'next'
+
+import PaginatedMsgs from '@/components/safe-messages/PaginatedMsgs'
+import TxHeader from '@/components/transactions/TxHeader'
+import SignedMessagesHelpLink from '@/components/transactions/SignedMessagesHelpLink'
+import { AppRoutes } from '@/config/routes'
+import { useCurrentChain } from '@/hooks/useChains'
+import { hasFeature } from '@/utils/chains'
+import { BRAND_NAME } from '@/config/constants'
+
+const Messages: NextPage = () => {
+  const chain = useCurrentChain()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!chain || hasFeature(chain, FEATURES.EIP1271)) {
+      return
+    }
+
+    router.replace({ ...router, pathname: AppRoutes.transactions.history })
+  }, [router, chain])
+
+  return (
+    <>
+      <Head>
+        <title>{`${BRAND_NAME} – Messages`}</title>
+      </Head>
+
+      <TxHeader>
+        <SignedMessagesHelpLink />
+      </TxHeader>
+
+      <main>
+        <PaginatedMsgs />
+      </main>
+    </>
+  )
+}
+
+export default Messages
