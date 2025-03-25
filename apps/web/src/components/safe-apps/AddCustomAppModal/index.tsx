@@ -29,7 +29,6 @@ import { useShareSafeAppUrl } from '@/components/safe-apps/hooks/useShareSafeApp
 
 import css from './styles.module.css'
 import ExternalLink from '@/components/common/ExternalLink'
-import { BRAND_NAME } from '@/config/constants'
 
 type Props = {
   open: boolean

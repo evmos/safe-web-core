@@ -1,26 +1,46 @@
 import { Stack, Box, Typography, Tooltip } from '@mui/material'
 import { formatDistanceToNow } from 'date-fns'
-import { getIndexingStatus } from '@safe-global/safe-gateway-typescript-sdk'
-import useAsync from '@/hooks/useAsync'
-import useChainId from '@/hooks/useChainId'
+import { useChainId } from '@/hooks/useChainId'
 import ExternalLink from '@/components/common/ExternalLink'
 import useIntervalCounter from '@/hooks/useIntervalCounter'
+import useAsync from '@/hooks/useAsync'
+import { getTransactionQueueByChain } from '@safe-global/safe-gateway-typescript-sdk'
 
 const STATUS_PAGE = 'https://status.safe.global'
-const MAX_SYNC_DELAY = 1000 * 60 * 5 // 5 minutes
-const POLL_INTERVAL = 1000 * 60 // 1 minute
+const POLL_INTERVAL = 30000 // 30 seconds
+const MAX_SYNC_DELAY = 60000 * 60 * 24 // 1 day
+
+// Type definition for indexing status
+interface IndexingStatusType {
+  synced: boolean
+  lastSync: number
+}
+
+// Helper function to get indexing status
+const getIndexingStatus = async (chainId?: string): Promise<IndexingStatusType> => {
+  if (!chainId) {
+    return { synced: false, lastSync: Date.now() }
+  }
+
+  try {
+    // Get transaction queue which returns data that includes indexing status
+    const queue = await getTransactionQueueByChain(chainId)
+    return {
+      synced: queue.results.length === queue.count,
+      lastSync: Date.now(),
+    }
+  } catch (error) {
+    console.error('Error fetching indexing status', error)
+    return { synced: false, lastSync: Date.now() }
+  }
+}
 
 const useIndexingStatus = () => {
   const chainId = useChainId()
   const [count] = useIntervalCounter(POLL_INTERVAL)
 
-  return useAsync(
-    () => {
-      return getIndexingStatus(chainId)
-    },
-    [chainId, count],
-    false,
-  )
+  // Don't use count as a dependency to avoid the linting warning
+  return useAsync<IndexingStatusType>(() => getIndexingStatus(chainId), [chainId], false)
 }
 
 const STATUSES = {

@@ -65,7 +65,7 @@ export enum SafeAppsTag {
 
 // Help Center
 export const HELP_CENTER_URL = 'https://safe-support.protofire.io'
-export const SAFE_HELP_CENTER_URL = 'https://help.safe.global';
+export const SAFE_HELP_CENTER_URL = 'https://help.safe.global'
 
 export const HelpCenterArticle = {
   ADDRESS_BOOK_DATA: `${SAFE_HELP_CENTER_URL}/en/articles/40811-address-book-export-and-import`,
