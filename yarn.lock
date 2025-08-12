@@ -7592,7 +7592,7 @@ __metadata:
     "@safe-global/store": "workspace:^"
     "@safe-global/test": "workspace:^"
     "@sentry/react": "npm:^7.91.0"
-    "@sentry/types": "npm:^7.74.0"
+    "@sentry/types": "npm:^10.4.0"
     "@spindl-xyz/attribution-lite": "npm:^1.4.0"
     "@storybook/addon-designs": "npm:^8.0.3"
     "@storybook/addon-essentials": "npm:^8.0.6"
@@ -7799,6 +7799,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sentry/core@npm:10.4.0":
+  version: 10.4.0
+  resolution: "@sentry/core@npm:10.4.0"
+  checksum: 10/5a36dc561cbf617f9a3d49c9311d3917b7a6d47c79bcd867cdcf6c3ade6ce0b2bce219597719836feefc133a8f58d0cecfef4f6f37ba19cd6de48e838acbbbce
+  languageName: node
+  linkType: hard
+
 "@sentry/core@npm:7.120.2":
   version: 7.120.2
   resolution: "@sentry/core@npm:7.120.2"
@@ -7848,10 +7855,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/types@npm:7.120.2, @sentry/types@npm:^7.74.0":
+"@sentry/types@npm:7.120.2":
   version: 7.120.2
   resolution: "@sentry/types@npm:7.120.2"
   checksum: 10/aceaf08ea382ab6c7ac2a9fe7c3953998736aa56458f9ecc6d8ed304912abff505e2ca08f9b7563b02114eb812b1bf3aa6a2c78b6067f306b28c7c1f1425f25d
+  languageName: node
+  linkType: hard
+
+"@sentry/types@npm:^10.4.0":
+  version: 10.4.0
+  resolution: "@sentry/types@npm:10.4.0"
+  dependencies:
+    "@sentry/core": "npm:10.4.0"
+  checksum: 10/04432ad92af697375b693457f0da5074a3dbefb7d2ef9b8fa6ec79fae85d22f6f71bef8a8384a14f0b297bd164e02f7b2949f7eda02eb5c6a4ce62ba27bd8806
   languageName: node
   linkType: hard
 
